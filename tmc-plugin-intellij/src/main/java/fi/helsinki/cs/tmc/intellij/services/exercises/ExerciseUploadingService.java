@@ -50,16 +50,29 @@ public class ExerciseUploadingService {
         logger.info("Starting to upload an exercise. @ExerciseUploadingService");
 
         String[] exerciseCourse = PathResolver.getCourseAndExerciseName(project);
-        Course course = finder.findCourse(getCourseName(exerciseCourse), "name");
-
-        if (course == null || !courseAndExerciseManager.isCourseInDatabase(course.getTitle())) {
+        if (exerciseCourse == null || exerciseCourse.length < 2) {
             Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error");
             return;
         }
 
-        Exercise exercise =
-                courseAndExerciseManager.getExercise(
-                        course.getTitle(), getExerciseName(exerciseCourse));
+        String courseName = getCourseName(exerciseCourse);
+        String exerciseName = getExerciseName(exerciseCourse);
+
+        Course course = finder.findCourse(courseName, "name");
+        if (course == null) {
+            course = finder.findCourse(courseName, "title");
+        }
+
+        Exercise exercise = courseAndExerciseManager.getExercise(
+                course != null ? course.getTitle() : courseName, exerciseName);
+        if (exercise == null) {
+            exercise = courseAndExerciseManager.getExercise(courseName, exerciseName);
+        }
+
+        if (exercise == null) {
+            Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error");
+            return;
+        }
 
         if (!settings.getToken().isPresent()) {
             LoginDialog.display();

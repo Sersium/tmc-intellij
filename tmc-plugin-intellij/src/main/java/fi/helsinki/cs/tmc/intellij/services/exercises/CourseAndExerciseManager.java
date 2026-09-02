@@ -40,18 +40,32 @@ public class CourseAndExerciseManager {
         logger.info("Get exercise from CourseAndExerciseManager. @CourseAndExerciseManager");
 
         try {
-            List<Exercise> exercises =
+            Map<String, List<Exercise>> courses =
                     PersistentExerciseDatabase.getInstance()
                             .getExerciseDatabase()
-                            .getCourses()
-                            .get(course);
+                            .getCourses();
 
+            List<Exercise> exercises = courses != null ? courses.get(course) : null;
+
+            if (exercises != null) {
                 for (Exercise exc : exercises) {
                     if (exerciseIsTheCorrectOne(exc, exercise)) {
                         logger.info("Found " + exc + " @CourseAndExerciseManager");
                         return exc;
                     }
                 }
+            } else if (courses != null) {
+                for (List<Exercise> list : courses.values()) {
+                    if (list != null) {
+                        for (Exercise exc : list) {
+                            if (exerciseIsTheCorrectOne(exc, exercise)) {
+                                logger.info("Found " + exc + " in fallback @CourseAndExerciseManager");
+                                return exc;
+                            }
+                        }
+                    }
+                }
+            }
         } catch (Exception exception) {
             logger.warn(
                     "Exercise was not found. @CourseAndExerciseManager",
@@ -151,6 +165,7 @@ public class CourseAndExerciseManager {
                             .getListOfDownloadedExercises(
                                     course.getExercises(), TmcSettingsManager.get());
             database.put(course.getTitle(), exercises);
+            database.put(course.getName(), exercises);
         } catch (Exception exception) {
             logger.warn(
                     "Failed to initiate database. @CourseAndExerciseManager",

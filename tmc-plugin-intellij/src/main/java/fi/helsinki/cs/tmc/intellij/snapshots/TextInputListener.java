@@ -40,23 +40,10 @@ public class TextInputListener implements DocumentListener {
 
     @Override
     public void beforeDocumentChange(DocumentEvent documentEvent) {
-        previous = documentEvent.getDocument().getText();
     }
 
     @Override
     public void documentChanged(DocumentEvent documentEvent) {
-        modified = documentEvent.getDocument().getText();
-        if (!isThisCorrectProject() || changeIsNotJustWhitespace(documentEvent)) {
-            logger.info(
-                    "not creating path for event, as project wasn't "
-                            + "correct one or change was just white space");
-            return;
-        }
-
-        logger.info("Creating patches for {}", documentEvent.getDocument());
-        createPatches(
-                PathResolver.getExercise(project.getBasePath()),
-                documentEvent);
     }
 
     private boolean isThisCorrectProject() {

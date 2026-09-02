@@ -1,6 +1,7 @@
 package fi.helsinki.cs.tmc.intellij.actions.buttonactions;
 
 import fi.helsinki.cs.tmc.core.domain.Course;
+import fi.helsinki.cs.tmc.core.domain.Exercise;
 import fi.helsinki.cs.tmc.intellij.services.ObjectFinder;
 import fi.helsinki.cs.tmc.intellij.services.PathResolver;
 import fi.helsinki.cs.tmc.intellij.services.TestRunningService;
@@ -22,22 +23,42 @@ public class RunTestsAction extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         logger.info("Run tests action performed. @RunTestsAction");
-        String[] courseExercise = PathResolver.getCourseAndExerciseName(anActionEvent.getProject());
-        Course course = new ObjectFinder().findCourse(getCourseName(courseExercise), "name");
+        com.intellij.openapi.project.Project project = anActionEvent.getProject();
+        if (project == null) {
+            return;
+        }
+
+        String[] courseExercise = PathResolver.getCourseAndExerciseName(project);
+        if (courseExercise == null || courseExercise.length < 2) {
+            return;
+        }
+
+        String courseName = getCourseName(courseExercise);
+        String exerciseName = getExerciseName(courseExercise);
+
+        Course course = new ObjectFinder().findCourse(courseName, "name");
+        if (course == null) {
+            course = new ObjectFinder().findCourse(courseName, "title");
+        }
 
         FileDocumentManager.getInstance().saveAllDocuments();
 
         new ButtonInputListener().receiveTestRun();
 
-        new TestRunningService()
-                .runTests(
-                        new CourseAndExerciseManager()
-                                .getExercise(
-                                        course.getTitle(),
-                                        getExerciseName(courseExercise)),
-                        anActionEvent.getProject(),
-                        new ThreadingService(),
-                        new ObjectFinder());
+        Exercise exercise = new CourseAndExerciseManager().getExercise(
+                course != null ? course.getTitle() : courseName, exerciseName);
+        if (exercise == null) {
+            exercise = new CourseAndExerciseManager().getExercise(courseName, exerciseName);
+        }
+
+        if (exercise != null) {
+            new TestRunningService()
+                    .runTests(
+                            exercise,
+                            project,
+                            new ThreadingService(),
+                            new ObjectFinder());
+        }
     }
 
     private String getCourseName(String[] courseExercise) {
