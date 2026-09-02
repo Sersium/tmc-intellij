@@ -15,10 +15,12 @@ public class SubmissionResultHandler {
     public void showResultMessage(Exercise exercise, SubmissionResult result, Project project) {
         logger.info("Showing submission result message. @SubmissionResultHandler");
 
-        if (result.isAllTestsPassed()) {
-            new SuccessfulSubmissionDialog(exercise, result, project);
-        } else {
-            new FailedSubmissionDialog(result, project);
-        }
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
+            if (result.isAllTestsPassed()) {
+                new SuccessfulSubmissionDialog(exercise, result, project);
+            } else {
+                new FailedSubmissionDialog(result, project);
+            }
+        });
     }
 }

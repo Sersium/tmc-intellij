@@ -34,29 +34,68 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /** Finds various exercises and courses from the disk or by asking the TMCServer. */
 public class ObjectFinder {
 
     private static final Logger logger = LoggerFactory.getLogger(ObjectFinder.class);
+    private static final Map<String, Course> courseCache = new ConcurrentHashMap<>();
+    private static volatile List<Course> cachedCourses = null;
+    private static volatile long lastCoursesFetchTime = 0;
+
+    public static void clearCache() {
+        courseCache.clear();
+        cachedCourses = null;
+        lastCoursesFetchTime = 0;
+    }
 
     @Nullable
     public Course findCourse(String searchTerm, String titleOrName) {
+        if (searchTerm == null || searchTerm.isEmpty()) {
+            return null;
+        }
+
+        // 1. Check in-memory settings current course first
+        try {
+            var currentCourseOpt = TmcSettingsManager.get().getCurrentCourse();
+            if (currentCourseOpt.isPresent()) {
+                Course current = currentCourseOpt.get();
+                if ((titleOrName.equals("name") && searchTerm.equals(current.getName()))
+                        || (titleOrName.equals("title") && searchTerm.equals(current.getTitle()))) {
+                    if (current.getExercises() != null && !current.getExercises().isEmpty()) {
+                        return current;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 2. Check local course details cache
+        String cacheKey = titleOrName + ":" + searchTerm;
+        Course cached = courseCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
         TmcCore core = TmcCoreHolder.get();
         List<Course> courses = getCourses(core);
 
         if (courses != null) {
-
             for (Course c : courses) {
                 if ((titleOrName.equals("name") && c.getName().equals(searchTerm))
                         || (titleOrName.equals("title") && c.getTitle().equals(searchTerm))) {
                     try {
                         logger.info("Trying to get course details from TmcCore. @ObjectFinder", c);
 
-                        return core.getCourseDetails(ProgressObserver.NULL_OBSERVER, c).call();
+                        Course details = core.getCourseDetails(ProgressObserver.NULL_OBSERVER, c).call();
+                        if (details != null) {
+                            courseCache.put("name:" + details.getName(), details);
+                            courseCache.put("title:" + details.getTitle(), details);
+                        }
+                        return details;
                     } catch (TmcCoreException exception) {
-                        logger.warn(
-                                "Could not find course. @ObjectFinder",
-                                exception);
+                        logger.warn("Could not find course. @ObjectFinder", exception);
                         new ErrorMessageService().showHumanReadableErrorMessage(exception, false);
                     } catch (Exception e) {
                         logger.warn("Could not find course. @ObjectFinder", e);
@@ -73,19 +112,20 @@ public class ObjectFinder {
 
     @TestOnly
     public Course findCourseForTesting(String searchTerm, String titleOrName, TmcCore core) {
-        List<Course> courses = getCourses(core);
+        List<Course> courses = null;
+        try {
+            courses = core.listCourses(ProgressObserver.NULL_OBSERVER).call();
+        } catch (Exception ignored) {
+        }
 
-        for (Course c : courses) {
-            if ((titleOrName.equals("name") && c.getName().equals(searchTerm))
-                    || (titleOrName.equals("title") && c.getTitle().equals(searchTerm))) {
-                try {
-                    return core.getCourseDetails(ProgressObserver.NULL_OBSERVER, c).call();
-                } catch (TmcCoreException exception) {
-                    new ErrorMessageService().showHumanReadableErrorMessage(exception, false);
-                } catch (Exception e) {
-                    new ErrorMessageService()
-                            .showErrorMessageWithExceptionDetails(
-                                    e, "Could not find course.", true);
+        if (courses != null) {
+            for (Course c : courses) {
+                if ((titleOrName.equals("name") && searchTerm.equals(c.getName()))
+                        || (titleOrName.equals("title") && searchTerm.equals(c.getTitle()))) {
+                    try {
+                        return core.getCourseDetails(ProgressObserver.NULL_OBSERVER, c).call();
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }
@@ -95,10 +135,18 @@ public class ObjectFinder {
 
     private List<Course> getCourses(TmcCore core) {
         logger.info("Processing getCourses @ObjectFinder");
-        List<Course> courses = null;
+        long now = System.currentTimeMillis();
+        if (cachedCourses != null && (now - lastCoursesFetchTime < 300_000)) {
+            return cachedCourses;
+        }
 
+        List<Course> courses = null;
         try {
             courses = core.listCourses(ProgressObserver.NULL_OBSERVER).call();
+            if (courses != null) {
+                cachedCourses = courses;
+                lastCoursesFetchTime = now;
+            }
         } catch (ShowToUserException exception) {
             logger.warn(
                 "Failed to fetch courses from TmcCore. @ObjectFinder",
@@ -116,7 +164,7 @@ public class ObjectFinder {
                             e, "Something went wrong while trying to get the course list", true);
         }
 
-        return courses;
+        return courses != null ? courses : cachedCourses;
     }
 
     public List<String> listAllDownloadedCourses() {

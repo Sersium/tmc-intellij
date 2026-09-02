@@ -68,7 +68,6 @@
 
     <group id="TMC.ToolbarGroup" text="TMC Actions">
       <add-to-group group-id="MainToolbarRight" anchor="before" relative-to-action="NewUiRunWidget" />
-      <add-to-group group-id="MainToolbarLeft" anchor="last" />
       <add-to-group group-id="NavBarToolBar" anchor="first" />
       <add-to-group group-id="MainToolBar" anchor="first" />
       <add-to-group group-id="ToolbarRunGroup" anchor="first" />

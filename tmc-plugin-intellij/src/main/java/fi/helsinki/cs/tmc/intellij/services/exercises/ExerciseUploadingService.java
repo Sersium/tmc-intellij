@@ -51,7 +51,8 @@ public class ExerciseUploadingService {
 
         String[] exerciseCourse = PathResolver.getCourseAndExerciseName(project);
         if (exerciseCourse == null || exerciseCourse.length < 2) {
-            Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error");
+            ApplicationManager.getApplication().invokeLater(() ->
+                    Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error"));
             return;
         }
 
@@ -70,21 +71,17 @@ public class ExerciseUploadingService {
         }
 
         if (exercise == null) {
-            Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error");
+            ApplicationManager.getApplication().invokeLater(() ->
+                    Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error"));
             return;
         }
 
         if (!settings.getToken().isPresent()) {
-            LoginDialog.display();
-        } else if (exercise == null) {
-            logger.warn("Failed to submit an exercise that was null. @ExerciseUploadingService");
-            ErrorMessageService error = new ErrorMessageService();
-            error.showErrorMessagePopup(
-                    "Failed to submit exercise.\nPlease check your internet connection.");
-
+            ApplicationManager.getApplication().invokeLater(LoginDialog::display);
         } else if (exercise.hasDeadlinePassed()) {
             logger.warn("Exercise has expired. @ExerciseUploadingService");
-            Messages.showErrorDialog(project, "The deadline for this exercise has passed", "Error");
+            ApplicationManager.getApplication().invokeLater(() ->
+                    Messages.showErrorDialog(project, "The deadline for this exercise has passed", "Error"));
         } else {
             getResults(
                     project,

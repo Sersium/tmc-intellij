@@ -52,20 +52,26 @@ public class UploadExerciseAction extends AnAction {
     }
 
     public void uploadExercise(Project project) {
+        if (project == null || project.isDisposed()) {
+            return;
+        }
 
         new ButtonInputListener().receiveSubmit();
+        FileDocumentManager.getInstance().saveAllDocuments();
 
         ProgressWindow window =
                 ProgressWindowMaker.make(
-                        "Uploading exercise, this may take several minutes",
+                        "Submitting exercise to TMC...",
                         project,
                         true,
                         true,
                         true);
         CoreProgressObserver observer = new CoreProgressObserver(window);
-        FileDocumentManager.getInstance().saveAllDocuments();
 
-        callExerciseUploadService(project, observer, window);
+        new ThreadingService().runWithNotification(
+                () -> callExerciseUploadService(project, observer, window),
+                project,
+                window);
     }
 
     private void callExerciseUploadService(

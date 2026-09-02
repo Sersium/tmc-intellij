@@ -124,18 +124,33 @@ public class CourseTabFactory {
         };
     }
 
+    private static void openInFileManager(File file) {
+        if (file == null) {
+            return;
+        }
+        try {
+            com.intellij.ide.actions.RevealFileAction.openDirectory(file);
+        } catch (Throwable t) {
+            try {
+                com.intellij.ide.BrowserUtil.browse(file);
+            } catch (Throwable t2) {
+                try {
+                    Desktop.getDesktop().open(file);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+    }
+
     @NotNull
     private ActionListener openCourseActionListener(final JTabbedPane tabbedPanelBase) {
         return actionEvent -> {
-            try {
-                logger.info("Opening course directory.");
-                Desktop.getDesktop().open(new File(TmcSettingsManager
-                        .get().getProjectBasePath()
-                        + File.separator + tabbedPanelBase
-                        .getSelectedComponent().getName()));
-            } catch (IOException e) {
-                logger.warn("Opening course directory failed.", e);
-            }
+            logger.info("Opening course directory.");
+            File dir = new File(TmcSettingsManager
+                    .get().getProjectBasePath()
+                    + File.separator + tabbedPanelBase
+                    .getSelectedComponent().getName());
+            openInFileManager(dir);
         };
     }
 
@@ -265,7 +280,7 @@ public class CourseTabFactory {
 
             try {
                 if (!(selectedItem instanceof Exercise)) {
-                    Desktop.getDesktop().open(new File(TmcSettingsManager
+                    openInFileManager(new File(TmcSettingsManager
                             .get().getProjectBasePath()
                             + File.separator + list.getParent()
                             .getParent().getName() + File.separator
@@ -273,14 +288,14 @@ public class CourseTabFactory {
                 } else {
                     logger.info("Getting TMC project directory "
                             + "from settingsTmc. @CourseTabFactory");
-                    Desktop.getDesktop().open(new File(((Exercise)selectedItem)
+                    openInFileManager(new File(((Exercise)selectedItem)
                             .getExerciseDirectory(TmcSettingsManager
                                     .get().getTmcProjectDirectory()).toString()));
                 }
-            } catch (IOException e1) {
-                logger.warn("IOException interrupted the mouse action. @CourseTabFactory", e1);
+            } catch (Exception e1) {
+                logger.warn("Exception interrupted the mouse action. @CourseTabFactory", e1);
                 new ErrorMessageService().showErrorMessageWithExceptionDetails(e1,
-                        "IOException occurred. Something interrupted the mouse action.",
+                        "Something interrupted the mouse action.",
                         true);
             }
         };
