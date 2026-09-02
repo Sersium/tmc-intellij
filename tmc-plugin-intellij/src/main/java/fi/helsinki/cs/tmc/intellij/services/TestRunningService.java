@@ -63,35 +63,39 @@ public class TestRunningService {
         logger.info("Preparing thread for running tests. @TestRunningService");
         threadingService.runWithNotification(
                 () -> {
-                    RunResult result;
                     try {
-                        result = TmcCoreHolder.get().runTests(observer, exercise).call();
-                    } catch (Exception exception) {
-                        logger.warn("Could not run tests. @TestRunningService", exception);
-                        new ErrorMessageService()
-                                .showErrorMessageWithExceptionDetails(exception, "Running tests failed!", true);
-                        return;
+                        RunResult result;
+                        try {
+                            result = TmcCoreHolder.get().runTests(observer, exercise).call();
+                        } catch (Exception exception) {
+                            logger.warn("Could not run tests. @TestRunningService", exception);
+                            new ErrorMessageService()
+                                    .showErrorMessageWithExceptionDetails(exception, "Running tests failed!", true);
+                            return;
+                        }
+
+                        if (isErrorStatus(result.status)) {
+                            String stdout = getLog(result, SpecialLogs.STDOUT);
+                            String stderr = getLog(result, SpecialLogs.STDERR);
+
+                            String message = (result.status == RunResult.Status.COMPILE_FAILED)
+                                    ? "Something went wrong while compiling the code. See details below."
+                                    : "Something went wrong while running the tests. See details below.";
+
+                            new ErrorMessageService().showPopupWithDetails(
+                                    message,
+                                    "Test Error",
+                                    stderr + System.lineSeparator() + stdout,
+                                    NotificationType.ERROR
+                            );
+                            return;
+                        }
+
+                        showTestResult(result, project);
+                        checkIfAllTestsPassed(result, project);
+                    } finally {
+                        TmcOperationState.finishOperation();
                     }
-
-                    if (isErrorStatus(result.status)) {
-                        String stdout = getLog(result, SpecialLogs.STDOUT);
-                        String stderr = getLog(result, SpecialLogs.STDERR);
-
-                        String message = (result.status == RunResult.Status.COMPILE_FAILED)
-                                ? "Something went wrong while compiling the code. See details below."
-                                : "Something went wrong while running the tests. See details below.";
-
-                        new ErrorMessageService().showPopupWithDetails(
-                                message,
-                                "Test Error",
-                                stderr + System.lineSeparator() + stdout,
-                                NotificationType.ERROR
-                        );
-                        return;
-                    }
-
-                    showTestResult(result, project);
-                    checkIfAllTestsPassed(result, project);
                 },
                 project,
                 window);

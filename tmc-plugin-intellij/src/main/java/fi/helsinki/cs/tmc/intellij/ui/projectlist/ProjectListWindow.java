@@ -103,6 +103,13 @@ public class ProjectListWindow {
             toolbar.add(submitButton);
             toolbar.add(refreshButton);
 
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.addStateListener(isBusy -> {
+                runButton.setEnabled(!isBusy);
+                testButton.setEnabled(!isBusy);
+                submitButton.setEnabled(!isBusy);
+                refreshButton.setEnabled(!isBusy);
+            });
+
             setActiveTabToSelectedCourse();
         } else {
             JPanel emptyPanel = new JPanel();

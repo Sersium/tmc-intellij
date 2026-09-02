@@ -39,10 +39,17 @@ public class UploadExerciseAction extends AnAction {
 
     @Override
     public void update(@NotNull AnActionEvent e) {
+        boolean isBusy = fi.helsinki.cs.tmc.intellij.services.TmcOperationState.isOperationRunning();
         e.getPresentation().setEnabledAndVisible(true);
+        e.getPresentation().setEnabled(!isBusy);
         e.getPresentation().setIcon(TmcIcons.SUBMIT_BUTTON);
         e.getPresentation().setText("TMC Submit");
-        e.getPresentation().setDescription("Submit current exercise to TMC server");
+        if (isBusy) {
+            e.getPresentation().setDescription("Cannot submit while "
+                    + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription());
+        } else {
+            e.getPresentation().setDescription("Submit to TMC Server (Shift+Alt+U)");
+        }
     }
 
     @Override
@@ -56,27 +63,40 @@ public class UploadExerciseAction extends AnAction {
             return;
         }
 
-        new ButtonInputListener().receiveSubmit();
-        try {
-            com.intellij.openapi.application.WriteIntentReadAction.run(() ->
-                    FileDocumentManager.getInstance().saveAllDocuments());
-        } catch (Throwable t) {
-            try {
-                FileDocumentManager.getInstance().saveAllDocuments();
-            } catch (Throwable ignored) {
-            }
+        if (!fi.helsinki.cs.tmc.intellij.services.TmcOperationState.tryStartOperation(
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.Operation.SUBMITTING)) {
+            new fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService().showInfoBalloon(
+                    "Another TMC operation is already in progress ("
+                            + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription() + ").");
+            return;
         }
 
-        ProgressWindow window =
-                ProgressWindowMaker.make(
-                        "Submitting exercise to TMC...",
-                        project,
-                        true,
-                        true,
-                        true);
-        CoreProgressObserver observer = new CoreProgressObserver(window);
+        try {
+            new ButtonInputListener().receiveSubmit();
+            try {
+                com.intellij.openapi.application.WriteIntentReadAction.run(() ->
+                        FileDocumentManager.getInstance().saveAllDocuments());
+            } catch (Throwable t) {
+                try {
+                    FileDocumentManager.getInstance().saveAllDocuments();
+                } catch (Throwable ignored) {
+                }
+            }
 
-        callExerciseUploadService(project, observer, window);
+            ProgressWindow window =
+                    ProgressWindowMaker.make(
+                            "Submitting exercise to TMC...",
+                            project,
+                            true,
+                            true,
+                            true);
+            CoreProgressObserver observer = new CoreProgressObserver(window);
+
+            callExerciseUploadService(project, observer, window);
+        } catch (Throwable t) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+            throw t;
+        }
     }
 
     private void callExerciseUploadService(

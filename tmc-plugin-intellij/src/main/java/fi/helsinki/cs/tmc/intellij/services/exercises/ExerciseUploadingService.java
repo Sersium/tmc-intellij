@@ -51,6 +51,7 @@ public class ExerciseUploadingService {
 
         String[] exerciseCourse = PathResolver.getCourseAndExerciseName(project);
         if (exerciseCourse == null || exerciseCourse.length < 2) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
             ApplicationManager.getApplication().invokeLater(() ->
                     Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error"));
             return;
@@ -71,14 +72,17 @@ public class ExerciseUploadingService {
         }
 
         if (exercise == null) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
             ApplicationManager.getApplication().invokeLater(() ->
                     Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error"));
             return;
         }
 
         if (!settings.getToken().isPresent()) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
             ApplicationManager.getApplication().invokeLater(LoginDialog::display);
         } else if (exercise.hasDeadlinePassed()) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
             logger.warn("Exercise has expired. @ExerciseUploadingService");
             ApplicationManager.getApplication().invokeLater(() ->
                     Messages.showErrorDialog(project, "The deadline for this exercise has passed", "Error"));
@@ -123,6 +127,8 @@ public class ExerciseUploadingService {
                     } catch (Exception exception) {
                         logger.warn("Could not get exercise submission results. "
                                 + "@ExerciseUploadingService", exception);
+                    } finally {
+                        fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
                     }
                 },
                 project,

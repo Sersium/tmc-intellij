@@ -35,10 +35,17 @@ public class RunTestsAction extends AnAction {
 
     @Override
     public void update(@NotNull AnActionEvent e) {
+        boolean isBusy = fi.helsinki.cs.tmc.intellij.services.TmcOperationState.isOperationRunning();
         e.getPresentation().setEnabledAndVisible(true);
+        e.getPresentation().setEnabled(!isBusy);
         e.getPresentation().setIcon(TmcIcons.TEST_BUTTON);
         e.getPresentation().setText("TMC Test");
-        e.getPresentation().setDescription("Run TMC tests for current project");
+        if (isBusy) {
+            e.getPresentation().setDescription("Cannot test while "
+                    + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription());
+        } else {
+            e.getPresentation().setDescription("Run TMC Tests (Shift+Alt+T)");
+        }
     }
 
     @Override
@@ -52,47 +59,62 @@ public class RunTestsAction extends AnAction {
             return;
         }
 
-        String[] courseExercise = PathResolver.getCourseAndExerciseName(project);
-        if (courseExercise == null || courseExercise.length < 2) {
-            new ErrorMessageService().showInfoBalloon("Active project is not recognized as a TMC exercise.");
+        if (!fi.helsinki.cs.tmc.intellij.services.TmcOperationState.tryStartOperation(
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.Operation.TESTING)) {
+            new ErrorMessageService().showInfoBalloon(
+                    "Another TMC operation is already in progress ("
+                            + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription() + ").");
             return;
         }
 
-        String courseName = getCourseName(courseExercise);
-        String exerciseName = getExerciseName(courseExercise);
-
-        Course course = new ObjectFinder().findCourse(courseName, "name");
-        if (course == null) {
-            course = new ObjectFinder().findCourse(courseName, "title");
-        }
-
         try {
-            com.intellij.openapi.application.WriteIntentReadAction.run(() ->
-                    FileDocumentManager.getInstance().saveAllDocuments());
-        } catch (Throwable t) {
-            try {
-                FileDocumentManager.getInstance().saveAllDocuments();
-            } catch (Throwable ignored) {
+            String[] courseExercise = PathResolver.getCourseAndExerciseName(project);
+            if (courseExercise == null || courseExercise.length < 2) {
+                new ErrorMessageService().showInfoBalloon("Active project is not recognized as a TMC exercise.");
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+                return;
             }
-        }
 
-        new ButtonInputListener().receiveTestRun();
+            String courseName = getCourseName(courseExercise);
+            String exerciseName = getExerciseName(courseExercise);
 
-        Exercise exercise = new CourseAndExerciseManager().getExercise(
-                course != null ? course.getTitle() : courseName, exerciseName);
-        if (exercise == null) {
-            exercise = new CourseAndExerciseManager().getExercise(courseName, exerciseName);
-        }
+            Course course = new ObjectFinder().findCourse(courseName, "name");
+            if (course == null) {
+                course = new ObjectFinder().findCourse(courseName, "title");
+            }
 
-        if (exercise != null) {
-            new TestRunningService()
-                    .runTests(
-                            exercise,
-                            project,
-                            new ThreadingService(),
-                            new ObjectFinder());
-        } else {
-            new ErrorMessageService().showInfoBalloon("Could not find exercise '" + exerciseName + "' in TMC database.");
+            try {
+                com.intellij.openapi.application.WriteIntentReadAction.run(() ->
+                        FileDocumentManager.getInstance().saveAllDocuments());
+            } catch (Throwable t) {
+                try {
+                    FileDocumentManager.getInstance().saveAllDocuments();
+                } catch (Throwable ignored) {
+                }
+            }
+
+            new ButtonInputListener().receiveTestRun();
+
+            Exercise exercise = new CourseAndExerciseManager().getExercise(
+                    course != null ? course.getTitle() : courseName, exerciseName);
+            if (exercise == null) {
+                exercise = new CourseAndExerciseManager().getExercise(courseName, exerciseName);
+            }
+
+            if (exercise != null) {
+                new TestRunningService()
+                        .runTests(
+                                exercise,
+                                project,
+                                new ThreadingService(),
+                                new ObjectFinder());
+            } else {
+                new ErrorMessageService().showInfoBalloon("Could not find exercise '" + exerciseName + "' in TMC database.");
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+            }
+        } catch (Throwable t) {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+            throw t;
         }
     }
 

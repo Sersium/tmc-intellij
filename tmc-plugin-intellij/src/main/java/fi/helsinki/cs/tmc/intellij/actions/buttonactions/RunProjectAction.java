@@ -31,10 +31,17 @@ public class RunProjectAction extends AnAction {
 
     @Override
     public void update(@NotNull AnActionEvent e) {
+        boolean isBusy = fi.helsinki.cs.tmc.intellij.services.TmcOperationState.isOperationRunning();
         e.getPresentation().setEnabledAndVisible(true);
+        e.getPresentation().setEnabled(!isBusy);
         e.getPresentation().setIcon(TmcIcons.RUN_BUTTON);
         e.getPresentation().setText("TMC Run");
-        e.getPresentation().setDescription("Run current project (TMC Run)");
+        if (isBusy) {
+            e.getPresentation().setDescription("Cannot run while "
+                    + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription());
+        } else {
+            e.getPresentation().setDescription("Run current project (TMC Run)");
+        }
     }
 
     @Override
@@ -50,16 +57,35 @@ public class RunProjectAction extends AnAction {
         if (project == null || project.isDisposed()) {
             return;
         }
-        logger.info("Getting RunManager.");
-        RunManager runManager = RunManager.getInstance(project);
-        Module module = getModule(project);
-        if (module == null) {
-            logger.warn("No module found for running project.");
+
+        if (!fi.helsinki.cs.tmc.intellij.services.TmcOperationState.tryStartOperation(
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.Operation.RUNNING)) {
+            new fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService().showInfoBalloon(
+                    "Another TMC operation is already in progress ("
+                            + fi.helsinki.cs.tmc.intellij.services.TmcOperationState.getCurrentOperation().getDescription() + ").");
             return;
         }
-        String configurationType = getConfigurationType();
-        logger.info("Creating RunProject object.");
-        new RunProject(runManager, module, configurationType);
+
+        com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
+            try {
+                com.intellij.util.SlowOperations.allowSlowOperations((com.intellij.util.ThrowableRunnable<Throwable>) () -> {
+                    logger.info("Getting RunManager.");
+                    RunManager runManager = RunManager.getInstance(project);
+                    Module module = getModule(project);
+                    if (module == null) {
+                        logger.warn("No module found for running project.");
+                        return;
+                    }
+                    String configurationType = getConfigurationType();
+                    logger.info("Creating RunProject object.");
+                    new RunProject(runManager, module, configurationType);
+                });
+            } catch (Throwable t) {
+                logger.warn("Failed to run project", t);
+            } finally {
+                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+            }
+        });
     }
 
     @NotNull
