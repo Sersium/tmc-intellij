@@ -5,16 +5,16 @@
 
 package fi.helsinki.cs.tmc.intellij.importexercise;
 
-import static com.intellij.ide.impl.NewProjectUtil.applyJdkToProject;
-
+import com.intellij.ide.impl.OpenProjectTask;
 import com.intellij.ide.impl.ProjectUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.impl.ProjectManagerImpl;
+import com.intellij.openapi.project.ex.ProjectManagerEx;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.projectRoots.ex.JavaSdkUtil;
 import com.intellij.openapi.roots.CompilerProjectExtension;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -49,16 +49,21 @@ public class NewProjectUtilModified {
             logger.info("Creates .idea");
             File projectDir = new File(path).getParentFile();
             if (projectDir == null) {
-                logger.warn("Cannot create project in '" + path + "': no parent file exists");
+                throw new IllegalArgumentException(
+                        "Cannot create project in '" + path + "': no parent directory exists");
             }
             FileUtil.ensureExists(projectDir);
 
             final File ideaDir = new File(path, Project.DIRECTORY_STORE_FOLDER);
             FileUtil.ensureExists(ideaDir);
 
-            newProject =
-                    ProjectManagerImpl.getInstanceEx()
-                            .newProject(path, path, true, false);
+            OpenProjectTask openProjectTask =
+                    OpenProjectTask.build().asNewProject().withProjectName(new File(path).getName());
+            newProject = ProjectManagerEx.getInstanceEx()
+                    .newProject(java.nio.file.Paths.get(path), openProjectTask);
+            if (newProject == null) {
+                throw new IllegalStateException("IntelliJ could not create project at " + path);
+            }
 
             logger.info("Setting JDK");
             final Sdk jdk =
@@ -70,7 +75,8 @@ public class NewProjectUtilModified {
                                 () ->
                                         ApplicationManager.getApplication()
                                                 .runWriteAction(
-                                                        () -> applyJdkToProject(newProject, jdk)),
+                                                        () -> JavaSdkUtil.applyJdkToProject(
+                                                                newProject, jdk)),
                                 null,
                                 null);
             }
@@ -124,7 +130,8 @@ public class NewProjectUtilModified {
                 newProject.save();
             }
         } catch (Exception e) {
-            logger.warn(e.getMessage());
+            logger.warn("Exercise import failed for {}", path, e);
+            throw new IllegalStateException("Exercise import failed for " + path, e);
         }
         logger.info("Exercise import progress is finished.");
     }

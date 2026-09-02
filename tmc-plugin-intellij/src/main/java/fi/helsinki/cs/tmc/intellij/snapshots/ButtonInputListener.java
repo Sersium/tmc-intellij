@@ -7,13 +7,14 @@ import fi.helsinki.cs.tmc.intellij.services.exercises.CourseAndExerciseManager;
 import fi.helsinki.cs.tmc.spyware.*;
 
 import com.google.gson.Gson;
+import com.intellij.openapi.project.Project;
 
 import org.jetbrains.annotations.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 /**
@@ -36,11 +37,14 @@ public class ButtonInputListener {
     @Nullable
     private Exercise getExercise() {
         logger.info("Making sure current exercise should be tracked");
+        Project project = new ObjectFinder().findCurrentProject();
+        if (project == null || project.getBasePath() == null) {
+            return null;
+        }
         if (new CourseAndExerciseManager()
                 .isCourseInDatabase(
-                        PathResolver.getCourseName(
-                                new ObjectFinder().findCurrentProject().getBasePath()))) {
-            return PathResolver.getExercise(new ObjectFinder().findCurrentProject().getBasePath());
+                        PathResolver.getCourseName(project.getBasePath()))) {
+            return PathResolver.getExercise(project.getBasePath());
         }
         return null;
     }
@@ -69,7 +73,7 @@ public class ButtonInputListener {
         logger.info("Creating a project action event JSON.");
         Object data = Collections.singletonMap("command", command);
         String json = new Gson().toJson(data);
-        byte[] jsonBytes = json.getBytes(Charset.forName("UTF-8"));
+        byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
         LoggableEvent event = new LoggableEvent("ide_action", jsonBytes);
         addEvent(event);
     }
@@ -84,7 +88,7 @@ public class ButtonInputListener {
         Object data = Collections.singletonMap("command", command);
         String json = new Gson().toJson(data);
 
-        byte[] jsonBytes = json.getBytes(Charset.forName("UTF-8"));
+        byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
         LoggableEvent event = new LoggableEvent(ex, "project_action", jsonBytes);
         addEvent(event);
     }

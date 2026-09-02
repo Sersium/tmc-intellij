@@ -35,7 +35,11 @@ public class ExerciseImport {
     }
 
     private static boolean isChild(File file, String name) {
-        for (String child : file.list()) {
+        String[] children = file.list();
+        if (children == null) {
+            return false;
+        }
+        for (String child : children) {
             if (child.equals(name)) {
                 return true;
             }

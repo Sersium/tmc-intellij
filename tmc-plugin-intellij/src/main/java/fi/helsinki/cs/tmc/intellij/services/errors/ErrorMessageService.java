@@ -5,10 +5,11 @@ import fi.helsinki.cs.tmc.core.exceptions.TmcCoreException;
 import fi.helsinki.cs.tmc.intellij.services.ObjectFinder;
 
 import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.CommonBundle;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -28,11 +29,9 @@ public class ErrorMessageService {
     /**
      * Notification group used by IntelliJ to group TMC notifications.
      */
-    public static final NotificationGroup TMC_NOTIFICATION = new NotificationGroup(
-            "TMC Error Messages",
-            NotificationDisplayType.STICKY_BALLOON,
-            true
-    );
+    public static NotificationGroup notifications() {
+        return NotificationGroupManager.getInstance().getNotificationGroup("TMC Notifications");
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(ErrorMessageService.class);
 
@@ -60,7 +59,7 @@ public class ErrorMessageService {
                 message,
                 title,
                 details,
-                new String[] { Messages.OK_BUTTON },
+                new String[] { CommonBundle.getOkButtonText() },
                 0,
                 0,
                 icon
@@ -108,7 +107,7 @@ public class ErrorMessageService {
     }
 
     private void showBalloonNotification(String message, NotificationType type) {
-        Notification notification = TMC_NOTIFICATION.createNotification(message, type);
+        Notification notification = notifications().createNotification(message, type);
         Project currentProject = new ObjectFinder().findCurrentProject();
 
         ApplicationManager.getApplication().invokeLater(() -> Notifications.Bus.notify(notification, currentProject));

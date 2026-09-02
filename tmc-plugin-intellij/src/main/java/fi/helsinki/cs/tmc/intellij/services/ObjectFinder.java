@@ -10,8 +10,8 @@ import fi.helsinki.cs.tmc.intellij.holders.TmcSettingsManager;
 import fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService;
 
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.actionSystem.DataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 
@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.awt.Component;
+import java.awt.KeyboardFocusManager;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +30,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Finds various exercises and courses from the disk or by asking the TMCServer. */
 public class ObjectFinder {
@@ -51,11 +56,10 @@ public class ObjectFinder {
                     } catch (TmcCoreException exception) {
                         logger.warn(
                                 "Could not find course. @ObjectFinder",
-                                exception,
-                                exception.getStackTrace());
+                                exception);
                         new ErrorMessageService().showHumanReadableErrorMessage(exception, false);
                     } catch (Exception e) {
-                        logger.warn("Could not find course. @ObjectFinder", e, e.getStackTrace());
+                        logger.warn("Could not find course. @ObjectFinder", e);
                         new ErrorMessageService()
                                 .showErrorMessageWithExceptionDetails(
                                         e, "Could not find course.", true);
@@ -98,16 +102,15 @@ public class ObjectFinder {
         } catch (ShowToUserException exception) {
             logger.warn(
                 "Failed to fetch courses from TmcCore. @ObjectFinder",
-                exception,
-                exception.getStackTrace());
+                exception);
             ErrorMessageService error = new ErrorMessageService();
             error.showErrorMessagePopup(
                 "Failed to fetch courses from the server.\nPlease check your internet connection.");
         } catch (TmcCoreException e) {
-            logger.warn("Getting courses failed @ObjectFinder", e, e.getStackTrace());
+            logger.warn("Getting courses failed @ObjectFinder", e);
             new ErrorMessageService().showHumanReadableErrorMessage(e, false);
         } catch (Exception e) {
-            logger.warn("Getting courses failed @ObjectFinder", e, e.getStackTrace());
+            logger.warn("Getting courses failed @ObjectFinder", e);
             new ErrorMessageService()
                     .showErrorMessageWithExceptionDetails(
                             e, "Something went wrong while trying to get the course list", true);
@@ -120,15 +123,17 @@ public class ObjectFinder {
         logger.info("Processing listAllDownloadedCourses. @ObjectFinder");
         List<String> courseTitles = new ArrayList<>();
 
-        if (getCourses(TmcCoreHolder.get())
-                == null) { // this because we don't want to go through all courses if the connection
-                           // to the server hasn't been established
+        List<Course> courses = getCourses(TmcCoreHolder.get());
+        if (courses == null) {
             return null;
         }
 
+        Map<String, Course> coursesByName = courses.stream()
+                .collect(Collectors.toMap(Course::getName, Function.identity(), (first, second) -> first));
+
         for (String name :
                 getListOfDirectoriesInPath(TmcSettingsManager.get().getProjectBasePath())) {
-            Course course = findCourse(name, "name");
+            Course course = coursesByName.get(name);
 
             if (course == null) {
                 continue;
@@ -143,13 +148,14 @@ public class ObjectFinder {
     public List<String> listAllDownloadedExercises(String courseTitle) {
         logger.info(
                 "Processing listAllDownloadedExercises from course {}. @ObjectFinder", courseTitle);
-        if (findCourse(courseTitle, "title") == null) {
+        Course course = findCourse(courseTitle, "title");
+        if (course == null) {
             return new ArrayList<>();
         }
         return getListOfDirectoriesInPath(
                 TmcSettingsManager.get().getProjectBasePath()
                         + File.separator
-                        + findCourse(courseTitle, "title").getName());
+                        + course.getName());
     }
 
     private List<String> getListOfDirectoriesInPath(String folderPath) {
@@ -163,9 +169,7 @@ public class ObjectFinder {
         } catch (Exception ex) {
             logger.warn(
                     "Could not get list of directories in path. @ObjectFinder",
-                    ex,
-                    ex.getStackTrace());
-            ex.printStackTrace();
+                    ex);
         }
         Collections.sort(fileNames);
         return fileNames;
@@ -180,15 +184,16 @@ public class ObjectFinder {
             // courseAndExerciseName is an array where the second to last element is course name and
             // last element is exercise name
             String[] courseAndExerciseNameArray = PathResolver.getCourseAndExerciseName(path);
-            if (courseAndExerciseNameArray == null
-                    || getExerciseName(courseAndExerciseNameArray).charAt(0) == '.') {
+            String exerciseName = courseAndExerciseNameArray == null
+                    ? null : getExerciseName(courseAndExerciseNameArray);
+            if (exerciseName == null || exerciseName.isEmpty() || exerciseName.charAt(0) == '.') {
                 logger.info("exerciseCourse variable = null. @ObjectFinder");
                 continue;
             }
             logger.info(
                     "Adding exercise to list. @ObjectFinder",
                     getExerciseName(courseAndExerciseNameArray));
-            fileNames.add(getExerciseName(courseAndExerciseNameArray));
+            fileNames.add(exerciseName);
         }
     }
 
@@ -199,20 +204,20 @@ public class ObjectFinder {
 
     public Project findCurrentProject() {
         logger.info("Trying to findCurrentProject. @ObjectFinder");
-        DataContext dataContext = DataManager.getInstance().getDataContextFromFocus().getResult();
-
-        if (dataContext == null) {
-            Project[] projects = ProjectManager.getInstance().getOpenProjects();
-
-            if (projects.length > 0) {
-                return projects[projects.length - 1];
-            }
-            return null;
+        Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        Project project = focusOwner == null ? null : CommonDataKeys.PROJECT.getData(
+                DataManager.getInstance().getDataContext(focusOwner));
+        if (project != null) {
+            return project;
         }
-        return DataKeys.PROJECT.getData(dataContext);
+        Project[] projects = ProjectManager.getInstance().getOpenProjects();
+        return projects.length == 0 ? null : projects[projects.length - 1];
     }
 
     public Course findCourseNoDetails(String courseName, TmcCore core) {
+        if (courseName == null) {
+            return null;
+        }
         try {
             List<Course> list = core.listCourses(ProgressObserver.NULL_OBSERVER).call();
             for (Course cor : list) {
@@ -221,6 +226,7 @@ public class ObjectFinder {
                 }
             }
         } catch (Exception e) {
+            logger.warn("Could not find course {}", courseName, e);
         }
         return null;
     }

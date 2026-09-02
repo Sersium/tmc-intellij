@@ -99,7 +99,8 @@ public class TestRunningService {
     }
 
     private String getLog(RunResult result, String log) {
-        return new String(result.logs.get(log), StandardCharsets.UTF_8);
+        byte[] contents = result.logs.get(log);
+        return contents == null ? "" : new String(contents, StandardCharsets.UTF_8);
     }
 
     private boolean isErrorStatus(RunResult.Status status) {
@@ -126,15 +127,22 @@ public class TestRunningService {
 
     private boolean allPassed(RunResult finalResult) {
         logger.info("Checking if all tests passed. @TestRunningService");
-        return finalResult.testResults.stream().allMatch(TestResult::isSuccessful);
+        return finalResult.testResults != null
+                && !finalResult.testResults.isEmpty()
+                && finalResult.testResults.stream().allMatch(TestResult::isSuccessful);
     }
 
     public void displayTestWindow(ObjectFinder finder) {
         logger.info("Displaying test window. @TestRunningService");
         Project project = finder.findCurrentProject();
-
-        ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results").show(null);
-        ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results").activate(null);
+        if (project == null || project.isDisposed()) {
+            return;
+        }
+        var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results");
+        if (toolWindow != null) {
+            toolWindow.show(null);
+            toolWindow.activate(null);
+        }
     }
 
     public void showTestResult(final RunResult finalResult) {

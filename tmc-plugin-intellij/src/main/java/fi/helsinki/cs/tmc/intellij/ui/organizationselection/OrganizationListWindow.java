@@ -3,7 +3,6 @@ package fi.helsinki.cs.tmc.intellij.ui.organizationselection;
 import com.google.common.base.Optional;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.util.containers.hash.HashMap;
 import fi.helsinki.cs.tmc.core.domain.Organization;
 import fi.helsinki.cs.tmc.core.domain.ProgressObserver;
 import fi.helsinki.cs.tmc.core.holders.TmcSettingsHolder;
@@ -21,6 +20,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public class OrganizationListWindow extends JPanel {
     private final JBList<Organization> organizations;
     private static JButton button;
 
-    private static final Logger logger = LoggerFactory.getLogger(LoginManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(OrganizationListWindow.class);
 
     public OrganizationListWindow(List<Organization> organizations) {
         Collections.sort(organizations, (a, b) -> {
@@ -178,7 +178,7 @@ public class OrganizationListWindow extends JPanel {
 
                 CourseListWindow.display(); // show courselistwindow after selecting an organization
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logger.warn("Failed to select organization.", ex);
             }
         }
     }

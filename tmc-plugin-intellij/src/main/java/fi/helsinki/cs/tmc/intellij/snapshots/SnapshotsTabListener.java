@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public class SnapshotsTabListener {
 
@@ -37,9 +37,9 @@ public class SnapshotsTabListener {
 
     private void createAndAddListeners(Project project) {
         logger.info("Creating and adding listener to FileEditorManager.");
-        FileEditorManager.getInstance(project)
-                .addFileEditorManagerListener(
-                        new FileEditorManagerListener() {
+        project.getMessageBus().connect(project).subscribe(
+                FileEditorManagerListener.FILE_EDITOR_MANAGER,
+                new FileEditorManagerListener() {
                             @Override
                             public void fileOpened(
                                     @NotNull FileEditorManager fileEditorManager,
@@ -58,12 +58,12 @@ public class SnapshotsTabListener {
                                             new LoggableEvent(
                                                     exercise,
                                                     "window_opened",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 } else {
                                     event =
                                             new LoggableEvent(
                                                     "window_opened",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 }
                                 addEventToBuffer(event);
                             }
@@ -87,12 +87,12 @@ public class SnapshotsTabListener {
                                             new LoggableEvent(
                                                     exercise,
                                                     "window_closed",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 } else {
                                     event =
                                             new LoggableEvent(
                                                     "window_closed",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 }
                                 addEventToBuffer(event);
                             }
@@ -154,20 +154,21 @@ public class SnapshotsTabListener {
                                             new LoggableEvent(
                                                     exercise,
                                                     "window_changed",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 } else {
                                     event =
                                             new LoggableEvent(
                                                     "window_changed",
-                                                    data.getBytes(Charset.forName("UTF-8")));
+                                                    data.getBytes(StandardCharsets.UTF_8));
                                 }
                                 addEventToBuffer(event);
                             }
-                        });
+                });
     }
 
     private void addEventToBuffer(LoggableEvent event) {
-        if (new CourseAndExerciseManager()
+        if (basePath == null
+                || !new CourseAndExerciseManager()
                 .isCourseInDatabase(PathResolver.getCourseName(basePath))) {
             return;
         }
@@ -175,11 +176,13 @@ public class SnapshotsTabListener {
     }
 
     public Course getCourse() {
+        if (basePath == null) {
+            return null;
+        }
         SettingsTmc settings = TmcSettingsManager.get();
-        if (settings.getCurrentCourse()
-                .get()
-                .getName()
-                .equals(PathResolver.getCourseName(basePath))) {
+        if (settings.getCurrentCourse().isPresent()
+                && settings.getCurrentCourse().get().getName()
+                        .equals(PathResolver.getCourseName(basePath))) {
             return settings.getCurrentCourse().get();
         }
         return new ObjectFinder().findCourse(PathResolver.getCourseName(basePath), "name");

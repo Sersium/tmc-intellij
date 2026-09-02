@@ -55,8 +55,7 @@ public class CourseAndExerciseManager {
         } catch (Exception exception) {
             logger.warn(
                     "Exercise was not found. @CourseAndExerciseManager",
-                    exception,
-                    exception.getStackTrace());
+                    exception);
         }
         return null;
     }
@@ -76,8 +75,7 @@ public class CourseAndExerciseManager {
         } catch (Exception exception) {
             logger.warn(
                     "Course was not found. @CourseAndExerciseManager",
-                    exception,
-                    exception.getStackTrace());
+                    exception);
             ErrorMessageService error = new ErrorMessageService();
             error.showErrorMessageWithExceptionDetails(
                     exception, "Could not find the course.", false);
@@ -108,14 +106,13 @@ public class CourseAndExerciseManager {
         } catch (TmcCoreException exception) {
             logger.warn(
                     "Failed to fetch courses from TmcCore. @CourseAndExerciseManager",
-                    exception,
-                    exception.getStackTrace());
+                    exception);
             if (TmcSettingsManager.get().getOrganization().isPresent()) {
                 showMessageDialog();
                 refreshCoursesOffline();
             }
         } catch (Exception exception) {
-            exception.printStackTrace();
+            logger.warn("Unexpected failure while initiating database.", exception);
         }
     }
 
@@ -137,7 +134,6 @@ public class CourseAndExerciseManager {
                                             "Cancel",
                                             icon);
                             if (answer == 0) {
-                                System.out.println("yes");
                                 this.initiateDatabase();
                             }
                         });
@@ -158,8 +154,7 @@ public class CourseAndExerciseManager {
         } catch (Exception exception) {
             logger.warn(
                     "Failed to initiate database. @CourseAndExerciseManager",
-                    exception,
-                    exception.getStackTrace());
+                    exception);
             new ErrorMessageService()
                     .showErrorMessageWithExceptionDetails(
                             exception, "Failed to initiate database", true);
@@ -225,7 +220,7 @@ public class CourseAndExerciseManager {
         logger.info("Updating single course. @CourseAndExerciseManager");
         boolean isNewCourse = getDatabase().getCourses().get(courseName) == null;
 
-        Course course = finder.findCourse(courseName, "name");
+        Course course = finder.findCourse(courseName, "title");
 
         if (course == null) {
             return;
@@ -247,9 +242,19 @@ public class CourseAndExerciseManager {
         logger.info(
                 "Checking if course {} exists in the database." + " @CourseAndExerciseManager",
                 string);
-        return PersistentExerciseDatabase.getInstance()
+        if (string == null) {
+            return false;
+        }
+        Map<String, List<Exercise>> courses = PersistentExerciseDatabase.getInstance()
                 .getExerciseDatabase()
-                .getCourses()
-                .containsKey(string);
+                .getCourses();
+        if (courses.containsKey(string)) {
+            return true;
+        }
+        com.google.common.base.Optional<Course> selectedCourse =
+                TmcSettingsManager.get().getCurrentCourse();
+        return selectedCourse.isPresent()
+                && string.equals(selectedCourse.get().getName())
+                && courses.containsKey(selectedCourse.get().getTitle());
     }
 }

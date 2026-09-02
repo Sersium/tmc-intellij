@@ -42,6 +42,28 @@ public class SettingsTmcTest {
     }
 
     @Test
+    public void blankCredentialsAreTreatedAsMissing() {
+        settingstmc.setUsername("   ");
+        settingstmc.setPassword("");
+        assertFalse(settingstmc.getUsername().isPresent());
+        assertFalse(settingstmc.getPassword().isPresent());
+    }
+
+    @Test
+    public void courseNameIsNullWhenNoCourseIsSelected() {
+        assertEquals(null, settingstmc.getCourseName());
+    }
+
+    @Test
+    public void courseNameUsesStableServerNameInsteadOfDisplayTitle() {
+        Course course = new Course();
+        course.setName("mooc-java-programming-i");
+        course.setTitle("Java Programming I");
+        settingstmc.setCourse(Optional.of(course));
+        assertEquals("mooc-java-programming-i", settingstmc.getCourseName());
+    }
+
+    @Test
     public void setServerAddressWorksCorrectly() throws Exception {
         settingstmc.setServerAddress("koira");
         String user = settingstmc.getServerAddress();
@@ -89,6 +111,12 @@ public class SettingsTmcTest {
     public void clientNameWorksCorrectly() throws Exception {
         assertEquals("idea_plugin", settingstmc.clientName());
     }
+
+    @Test
+    public void clientVersionMatchesPluginVersion() {
+        assertEquals("2.2.0", settingstmc.clientVersion());
+    }
+
     @Test
     public void getTmcProjectDirectoryWorksCorrectly() throws Exception {
         Path path = Paths.get("koira" + File.separator + "TMCProjects");

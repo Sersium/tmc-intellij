@@ -79,7 +79,7 @@ public class ProjectListWindow {
         logger.info("Setting active tab to selected course. @ProjectListWindow");
 
         if (TmcSettingsManager.get().getCurrentCourse().isPresent()) {
-            String course = TmcSettingsManager.get().getCurrentCourse().get().getName();
+            String course = TmcSettingsManager.get().getCurrentCourse().get().getTitle();
             for (int i = 0; i < tabbedPaneBase.getTabCount(); i++) {
                 if (tabbedPaneBase.getTitleAt(i).equals(course)) {
                     tabbedPaneBase.setSelectedIndex(i);

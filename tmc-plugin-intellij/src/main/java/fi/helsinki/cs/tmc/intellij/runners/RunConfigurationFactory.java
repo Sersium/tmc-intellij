@@ -38,8 +38,8 @@ public class RunConfigurationFactory {
 
     public boolean checkConfigurationType() {
         logger.info("Checking configurationType.");
-        return !runManager
-                .getSelectedConfiguration()
+        RunnerAndConfigurationSettings selected = runManager.getSelectedConfiguration();
+        return selected == null || !selected
                 .getConfiguration()
                 .getType()
                 .getDisplayName()
@@ -86,10 +86,11 @@ public class RunConfigurationFactory {
         logger.info("Creating configuration.");
         ConfigurationType type = ConfigurationTypeUtil.findConfigurationType(configurationType);
         RunnerAndConfigurationSettings settings =
-                runManager.createRunConfiguration(
+                runManager.createConfiguration(
                         module.getName(), type.getConfigurationFactories()[0]);
         logger.info("Adding configuration to RunManager.");
-        runManager.addConfiguration(settings, true);
+        settings.storeInDotIdeaFolder();
+        runManager.addConfiguration(settings);
         logger.info("Setting created configuration to be the selected.");
         runManager.setSelectedConfiguration(settings);
     }

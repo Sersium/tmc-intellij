@@ -21,11 +21,12 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
-import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileSystemView;
 
 /** TMC Settings component from Core, has all the necessary settings. */
 public class SettingsTmc implements TmcSettings, Serializable {
 
+    private static final long serialVersionUID = 1L;
     private static final Logger logger = LoggerFactory.getLogger(SettingsTmc.class);
     @Property private String username;
     @Property private String password;
@@ -54,10 +55,9 @@ public class SettingsTmc implements TmcSettings, Serializable {
         this.checkForExercises = false;
         this.firstRun = true;
         logger.info("Setting default folder for TMC project files. @SettingsTmc");
-        JFileChooser fileChooser = new JFileChooser();
         serverAddress = "https://tmc.mooc.fi/";
         projectBasePath =
-                fileChooser.getFileSystemView().getDefaultDirectory().toString()
+                FileSystemView.getFileSystemView().getDefaultDirectory().toString()
                         + File.separator
                         + "IdeaProjects"
                         + File.separator
@@ -74,26 +74,18 @@ public class SettingsTmc implements TmcSettings, Serializable {
 
     public void setUsername(String username) {
         logger.info("Setting username -> {}. @SettingsTmc", username);
-        if (username.trim().equals("")) {
-            this.username = null;
-        }
-        this.username = username;
+        this.username = username == null || username.trim().isEmpty() ? null : username.trim();
     }
 
     public void setPassword(String password) {
         logger.info("Setting password. @SettingsTmc");
-        if (password.trim().equals("")) {
-            this.password = null;
-        }
-        this.password = password;
+        this.password = password == null || password.isEmpty() ? null : password;
     }
 
     public String getCourseName() {
-        logger.info("Getting course name <- {}. @SettingsTmc", course.getTitle());
-        if (course != null) {
-            return course.getTitle();
-        }
-        return null;
+        String courseName = course == null ? null : course.getName();
+        logger.info("Getting course name <- {}. @SettingsTmc", courseName);
+        return courseName;
     }
 
     public void setServerAddress(String serverAddress) {
@@ -130,10 +122,9 @@ public class SettingsTmc implements TmcSettings, Serializable {
     @Override
     public void setPassword(Optional<String> password) {
         logger.info("Setting password. @SettingsTmc");
-        if (password.isPresent() && password.get().trim().equals("")) {
-            this.password = null;
-        }
-        this.password = password.orNull();
+        this.password = password.isPresent() && !password.get().isEmpty()
+                ? password.get()
+                : null;
     }
 
     @Override
@@ -161,7 +152,7 @@ public class SettingsTmc implements TmcSettings, Serializable {
 
     @Override
     public String clientVersion() {
-        return "1.0.2";
+        return "2.2.0";
     }
 
     @Override
@@ -172,7 +163,7 @@ public class SettingsTmc implements TmcSettings, Serializable {
     @Override
     public Locale getLocale() {
         logger.info("Getting locale. @SettingsTmc");
-        return new Locale("en");
+        return Locale.ENGLISH;
     }
 
     @Override
@@ -189,8 +180,7 @@ public class SettingsTmc implements TmcSettings, Serializable {
 
     @Override
     public Path getConfigRoot() {
-        JFileChooser fileChooser = new JFileChooser();
-        return Paths.get(fileChooser.getFileSystemView().getDefaultDirectory().toString());
+        return FileSystemView.getFileSystemView().getDefaultDirectory().toPath();
     }
 
     @Override

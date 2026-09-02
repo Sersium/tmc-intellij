@@ -3,18 +3,21 @@ package fi.helsinki.cs.tmc.intellij.snapshots;
 import fi.helsinki.cs.tmc.core.domain.Exercise;
 import fi.helsinki.cs.tmc.core.utilities.JsonMaker;
 import fi.helsinki.cs.tmc.intellij.services.ClipboardService;
-import fi.helsinki.cs.tmc.intellij.services.ObjectFinder;
 import fi.helsinki.cs.tmc.intellij.services.PathResolver;
 import fi.helsinki.cs.tmc.intellij.services.exercises.CourseAndExerciseManager;
 import fi.helsinki.cs.tmc.spyware.*;
 
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 
 import name.fraser.neil.plaintext.DiffMatchPatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -27,8 +30,13 @@ public class TextInputListener implements DocumentListener {
     private static final Logger logger = LoggerFactory.getLogger(TextInputListener.class);
 
     private final DiffMatchPatch diff = new DiffMatchPatch();
+    private final Project project;
     private String previous;
     private String modified;
+
+    public TextInputListener(Project project) {
+        this.project = project;
+    }
 
     @Override
     public void beforeDocumentChange(DocumentEvent documentEvent) {
@@ -45,17 +53,18 @@ public class TextInputListener implements DocumentListener {
             return;
         }
 
-        logger.info("Creating patches for ", documentEvent.getSource());
+        logger.info("Creating patches for {}", documentEvent.getDocument());
         createPatches(
-                PathResolver.getExercise(new ObjectFinder().findCurrentProject().getBasePath()),
+                PathResolver.getExercise(project.getBasePath()),
                 documentEvent);
     }
 
     private boolean isThisCorrectProject() {
-        return new CourseAndExerciseManager()
+        String basePath = project.getBasePath();
+        return basePath != null
+                && new CourseAndExerciseManager()
                 .isCourseInDatabase(
-                        PathResolver.getCourseName(
-                                new ObjectFinder().findCurrentProject().getBasePath()));
+                        PathResolver.getCourseName(basePath));
     }
 
     private boolean changeIsNotJustWhitespace(DocumentEvent documentEvent) {
@@ -93,15 +102,12 @@ public class TextInputListener implements DocumentListener {
             DocumentEvent documentEvent, List<DiffMatchPatch.Patch> patches) {
 
         logger.info("Creating JSON from patches.");
-        String source = documentEvent.getSource().toString();
-
-        if (documentEvent.getSource().toString().length() <= 20) {
+        VirtualFile file = FileDocumentManager.getInstance().getFile(documentEvent.getDocument());
+        if (file == null) {
             return null;
         }
-
-        source = source.substring(20, source.length() - 1);
         return JsonMaker.create()
-                .add("file", new PathResolver().getPathRelativeToProject(source))
+                .add("file", new PathResolver().getPathRelativeToProject(file.getPath()))
                 .add("patches", diff.patch_toText(patches))
                 .add(
                         "full_document",
@@ -118,7 +124,8 @@ public class TextInputListener implements DocumentListener {
             return;
         }
 
-        LoggableEvent event = new LoggableEvent(exercise, eventType, text.getBytes());
+        LoggableEvent event =
+                new LoggableEvent(exercise, eventType, text.getBytes(StandardCharsets.UTF_8));
         SnapshotsEventManager.add(event);
     }
 }

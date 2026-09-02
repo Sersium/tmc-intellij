@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.jetbrains.intellij.platform") version "2.13.1"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -33,7 +33,12 @@ sourceSets {
 
 dependencies {
     intellijPlatform {
-        intellijIdea(providers.gradleProperty("platformVersion"))
+        val localPlatformPath = providers.gradleProperty("localPlatformPath")
+        if (localPlatformPath.isPresent) {
+            local(localPlatformPath.get())
+        } else {
+            intellijIdea(providers.gradleProperty("platformVersion"))
+        }
         bundledPlugin("com.intellij.java")
     }
 
@@ -46,7 +51,7 @@ dependencies {
     implementation("org.apache.ant:ant:1.10.14")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-core:5.14.0")
+    testImplementation("org.mockito:mockito-core:5.23.0")
 }
 
 intellijPlatform {
@@ -68,5 +73,6 @@ tasks {
     withType<JavaCompile> {
         options.release = 21
         options.encoding = "UTF-8"
+        options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
     }
 }

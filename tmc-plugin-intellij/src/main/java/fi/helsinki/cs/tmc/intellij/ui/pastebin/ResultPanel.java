@@ -16,10 +16,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Creates the Pastebin result panel.
  */
 public class ResultPanel {
+    private static final Logger logger = LoggerFactory.getLogger(ResultPanel.class);
     private JTextField textField1;
     private JButton viewPasteButton;
     private JButton copyToClipboardButton;
@@ -34,7 +38,7 @@ public class ResultPanel {
                     try {
                         Desktop.getDesktop().browse(uri);
                     } catch (IOException e1) {
-                        e1.printStackTrace();
+                        logger.warn("Could not open browser to view paste.", e1);
                     }
                 });
         copyToClipboardButton.addActionListener(

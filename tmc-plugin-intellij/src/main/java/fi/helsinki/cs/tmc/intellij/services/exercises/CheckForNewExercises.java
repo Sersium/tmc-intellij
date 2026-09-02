@@ -14,6 +14,7 @@ import fi.helsinki.cs.tmc.intellij.services.ObjectFinder;
 import fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService;
 
 import com.intellij.notification.NotificationType;
+import com.intellij.notification.NotificationAction;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import org.slf4j.Logger;
@@ -26,12 +27,11 @@ public class CheckForNewExercises {
 
     private static final Logger logger = LoggerFactory.getLogger(CheckForNewExercises.class);
 
-    public void doCheck() {
+    public void doCheck(Project project) {
         ApplicationManager.getApplication()
-                .invokeLater(
+                .executeOnPooledThread(
                         () -> {
                             logger.info("Checking for new exercises.");
-                            Project project = new ObjectFinder().findCurrentProject();
                             TmcCore core = TmcCoreHolder.get();
                             SettingsTmc settings = TmcSettingsManager.get();
                             Course course =
@@ -47,7 +47,7 @@ public class CheckForNewExercises {
                             try {
                                 getExerciseUpdateData(project, core, settings, manager);
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                logger.warn("Checking for new exercises failed.", e);
                             }
                         });
     }
@@ -59,31 +59,37 @@ public class CheckForNewExercises {
         UpdateResult result =
                 core.getExerciseUpdates(ProgressObserver.NULL_OBSERVER, settings.getCurrentCourse().get())
                         .call();
-        if (newExercisesAreAvailable(
-                result.getNewExercises(), manager.getExercises(settings.getCourseName()))) {
+        if (hasNewIncompleteExercises(
+                result.getNewExercises(), manager.getExercises(
+                        settings.getCurrentCourse().get().getTitle()))) {
+            ApplicationManager.getApplication().invokeLater(
+                    () -> createNotificationForNewExercises(project, settings));
             return true;
         }
-        createNotificationForNewExercises(project, settings);
         return false;
     }
 
     private void createNotificationForNewExercises(Project project, SettingsTmc settings) {
-        ErrorMessageService.TMC_NOTIFICATION
+        ErrorMessageService.notifications()
                 .createNotification(
                         "New exercises!",
                         "New exercises found for "
-                                + settings.getCourseName()
-                                + ". \n<a href=/>Click here to download them<a>",
-                        NotificationType.INFORMATION,
-                        (notification, hyperlinkEvent) ->
-                                new DownloadExerciseAction().downloadExercises(project, false))
+                                + settings.getCurrentCourse().get().getTitle() + ".",
+                        NotificationType.INFORMATION)
+                .addAction(NotificationAction.createSimpleExpiring(
+                        "Download exercises",
+                        () -> new DownloadExerciseAction().downloadExercises(project, false)))
                 .notify(project);
     }
 
-    private boolean newExercisesAreAvailable(List<Exercise> newExercises, List<Exercise> exercises) {
+    private boolean hasNewIncompleteExercises(
+            List<Exercise> newExercises, List<Exercise> exercises) {
+        if (newExercises == null) {
+            return false;
+        }
+        List<Exercise> downloaded = exercises == null ? java.util.Collections.emptyList() : exercises;
         return newExercises.stream()
-                .filter(ex -> !exerciseIsOnList(ex, exercises))
-                .allMatch(Exercise::isCompleted);
+                .anyMatch(ex -> !exerciseIsOnList(ex, downloaded) && !ex.isCompleted());
     }
 
     private boolean exerciseIsOnList(Exercise ex, List<Exercise> exercises) {

@@ -3,7 +3,7 @@ package fi.helsinki.cs.tmc.intellij.ui.login;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import fi.helsinki.cs.tmc.core.domain.Course;
+import com.intellij.openapi.application.ApplicationManager;
 import fi.helsinki.cs.tmc.core.domain.Organization;
 import fi.helsinki.cs.tmc.core.utilities.TmcServerAddressNormalizer;
 import fi.helsinki.cs.tmc.intellij.holders.ProjectListManagerHolder;
@@ -18,8 +18,11 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class LoginDialog extends JDialog {
+    private static LoginDialog instance;
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -30,18 +33,16 @@ public class LoginDialog extends JDialog {
     private SettingsTmc settingsTmc;
     private TmcServerAddressNormalizer addressNormalizer;
     private Organization previousOrganization;
-    private Course previousCourse;
 
     private static final Logger logger = LoggerFactory.getLogger(LoginManager.class);
 
     public LoginDialog() {
         setContentPane(contentPane);
-        setModal(true);
+        setModal(false);
         getRootPane().setDefaultButton(buttonOK);
 
         settingsTmc = PersistentTmcSettings.getInstance().getSettingsTmc();
         previousOrganization = settingsTmc.getOrganization().orNull();
-        previousCourse = settingsTmc.getCurrentCourse().orNull();
 
         serverAddress.setText(settingsTmc.getServerAddress());
 
@@ -93,10 +94,13 @@ public class LoginDialog extends JDialog {
 
     public static void display() {
         logger.info("Showing Login window. @LoginDialog");
-
-        LoginDialog dialog = new LoginDialog();
-        dialog.setLocationRelativeTo(null);
-        dialog.setVisible(true);
+        if (instance != null && instance.isDisplayable()) {
+            instance.toFront();
+            return;
+        }
+        instance = new LoginDialog();
+        instance.setLocationRelativeTo(null);
+        instance.setVisible(true);
     }
 
     private void onOK() {
@@ -106,35 +110,52 @@ public class LoginDialog extends JDialog {
 
         saveSettings.setSettingsTmc(settingsTmc);
 
-        LoginManager loginManager = new LoginManager();
-
-        if (loginManager.login(passwordField.getText())) {
-            dispose();
-            addressNormalizer = getAddressNormalizer();
-            addressNormalizer.selectOrganizationAndCourse();
+        char[] password = passwordField.getPassword();
+        buttonOK.setEnabled(false);
+        buttonCancel.setEnabled(false);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            boolean loggedIn;
             try {
-                if (!settingsTmc.getOrganization().isPresent()) {
-                    OrganizationListWindow.display();
-                } else if (!settingsTmc.getCurrentCourse().isPresent()
-                        || (previousOrganization != settingsTmc.getOrganization().get()
-                    && previousCourse == settingsTmc.getCurrentCourse().get())) {
-                    // Show courselistwindow if current course isn't selected OR if user's
-                    // organization has
-                    // changed and current course hasn't.
-                    // Because then the current course probably isn't the right organization's
-                    // course.
-                    CourseListWindow.display();
-                } else {
-                    ProjectListManagerHolder.get().refreshAllCourses();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+                loggedIn = new LoginManager().login(new String(password));
+            } finally {
+                Arrays.fill(password, '\0');
             }
+            boolean loginSucceeded = loggedIn;
+            ApplicationManager.getApplication().invokeLater(() -> finishLogin(loginSucceeded));
+        });
+    }
+
+    private void finishLogin(boolean loggedIn) {
+        if (!isDisplayable()) {
+            return;
+        }
+        buttonOK.setEnabled(true);
+        buttonCancel.setEnabled(true);
+        if (!loggedIn) {
+            return;
+        }
+
+        dispose();
+        instance = null;
+        addressNormalizer = getAddressNormalizer();
+        addressNormalizer.selectOrganizationAndCourse();
+        try {
+            if (!settingsTmc.getOrganization().isPresent()) {
+                OrganizationListWindow.display();
+            } else if (!settingsTmc.getCurrentCourse().isPresent()
+                    || !Objects.equals(previousOrganization, settingsTmc.getOrganization().get())) {
+                CourseListWindow.display();
+            } else {
+                ProjectListManagerHolder.get().refreshAllCourses();
+            }
+        } catch (Exception e) {
+            logger.warn("Could not show organization or course selection.", e);
         }
     }
 
     private void onCancel() {
         dispose();
+        instance = null;
     }
 
     private ActionListener createActionListenerChangeServerAddress() {

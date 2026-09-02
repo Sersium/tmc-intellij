@@ -48,18 +48,17 @@ public class ProjectOpener {
                     ExerciseImport.importExercise(path);
                     ProjectUtil.openOrImport(path, project, true);
                     if (project != null) {
-                        ProjectManager.getInstance().closeProject(project);
+                        ProjectManager.getInstance().closeAndDispose(project);
                     }
 
                     String[] split = PathResolver.getCourseAndExerciseName(path);
                     Course course = new ObjectFinder().findCourse(split[split.length - 2], "name");
-                    TmcSettingsManager.get().setCourse(Optional.of(course));
+                    TmcSettingsManager.get().setCourse(Optional.fromNullable(course));
 
                 } catch (Exception exception) {
                     logger.warn(
                             "Could not open project from path. @ProjectOpener",
-                            exception,
-                            exception.getStackTrace());
+                            exception);
                     new ErrorMessageService()
                             .showErrorMessageWithExceptionDetails(
                                     exception, "Could not open project from path. " + path, true);

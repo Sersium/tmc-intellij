@@ -36,7 +36,7 @@ public class ProjectListRenderer extends DefaultListCellRenderer {
 
     @Override
     public Component getListCellRendererComponent(
-            JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 
         JLabel label =
                 (JLabel)
@@ -65,7 +65,7 @@ public class ProjectListRenderer extends DefaultListCellRenderer {
                 label.setIcon(TmcIcons.NOT_DONE_EXERCISE);
             }
         } catch (Exception ewr) {
-            logger.info("Failed to set icon.", ewr, ewr.getStackTrace());
+            logger.info("Failed to set icon.", ewr);
             new ErrorMessageService()
                     .showErrorMessageWithExceptionDetails(ewr, "Failed to set icon.", true);
         }
@@ -76,7 +76,7 @@ public class ProjectListRenderer extends DefaultListCellRenderer {
     }
 
     private boolean exerciseUnKnown(Object value) {
-        return Exercise.class != value.getClass();
+        return !(value instanceof Exercise);
     }
 
     private boolean exerciseCompleted(Object value) {

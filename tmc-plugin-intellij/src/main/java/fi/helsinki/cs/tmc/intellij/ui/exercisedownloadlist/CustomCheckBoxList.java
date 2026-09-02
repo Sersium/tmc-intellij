@@ -26,7 +26,7 @@ import javax.swing.border.EmptyBorder;
  * http://stackoverflow.com/questions/19766/how-do-i-make-a-list-with-checkboxes-in-java-swing
  * Borrowed from tmc-netbeans plugin
  */
-public class CustomCheckBoxList extends JList implements Iterable<JCheckBox> {
+public class CustomCheckBoxList extends JList<JCheckBox> implements Iterable<JCheckBox> {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomCheckBoxList.class);
     private final List<ItemListener> itemListeners;
@@ -41,7 +41,7 @@ public class CustomCheckBoxList extends JList implements Iterable<JCheckBox> {
                     public void mousePressed(MouseEvent event) {
                         int index = locationToIndex(event.getPoint());
                         if (index != -1) {
-                            JCheckBox checkbox = (JCheckBox) getModel().getElementAt(index);
+                            JCheckBox checkbox = getModel().getElementAt(index);
                             if (CustomCheckBoxList.this.isEnabled() && checkbox.isEnabled()) {
                                 checkbox.setSelected(!checkbox.isSelected());
                             }
@@ -73,7 +73,7 @@ public class CustomCheckBoxList extends JList implements Iterable<JCheckBox> {
 
     public JCheckBox getElement(int element) {
 
-        return (JCheckBox) getModel().getElementAt(element);
+        return getModel().getElementAt(element);
     }
 
     @NotNull
@@ -105,22 +105,22 @@ public class CustomCheckBoxList extends JList implements Iterable<JCheckBox> {
         newCheckBox.addItemListener(itemEventForwarder);
         newCheckBox.addPropertyChangeListener(checkBoxPropChangeListener);
 
-        ListModel model = getModel();
+        ListModel<JCheckBox> model = getModel();
         JCheckBox[] newData = new JCheckBox[model.getSize() + 1];
         for (int i = 0; i < model.getSize(); ++i) {
-            newData[i] = (JCheckBox) model.getElementAt(i);
+            newData[i] = model.getElementAt(i);
         }
         newData[newData.length - 1] = newCheckBox;
         setListData(newData);
     }
 
     public boolean isSelected(int selecti) {
-        return ((JCheckBox) getModel().getElementAt(selecti)).isSelected();
+        return getModel().getElementAt(selecti).isSelected();
     }
 
     public void setSelected(int setselecti, boolean selected) {
 
-        ((JCheckBox) getModel().getElementAt(setselecti)).setSelected(selected);
+        getModel().getElementAt(setselecti).setSelected(selected);
     }
 
     public boolean isAnySelected() {
@@ -132,11 +132,14 @@ public class CustomCheckBoxList extends JList implements Iterable<JCheckBox> {
         return false;
     }
 
-    protected class CellRenderer implements ListCellRenderer {
+    protected class CellRenderer implements ListCellRenderer<JCheckBox> {
         @Override
         public Component getListCellRendererComponent(
-                JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            JCheckBox checkbox = (JCheckBox) value;
+                JList<? extends JCheckBox> list,
+                JCheckBox checkbox,
+                int index,
+                boolean isSelected,
+                boolean cellHasFocus) {
             checkbox.setBackground(isSelected ? getSelectionBackground() : getBackground());
             checkbox.setForeground(isSelected ? getSelectionForeground() : getForeground());
             checkbox.setFont(getFont());

@@ -29,7 +29,7 @@ public class CourseListWindow extends JPanel {
     private final JBList<Course> courses;
     private static JButton button;
 
-    private static final Logger logger = LoggerFactory.getLogger(LoginManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(CourseListWindow.class);
 
     public CourseListWindow(List<Course> courses) {
         Course[] courseArray = courses.toArray(new Course[courses.size()]);
@@ -182,7 +182,7 @@ public class CourseListWindow extends JPanel {
                 }
                 ProjectListManagerHolder.get().refreshAllCourses();
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logger.warn("Failed to select course.", ex);
             }
         }
     }

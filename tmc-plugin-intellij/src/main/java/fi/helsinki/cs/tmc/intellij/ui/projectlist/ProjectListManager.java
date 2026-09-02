@@ -23,7 +23,7 @@ import javax.swing.DefaultListModel;
 public class ProjectListManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectListManager.class);
-    private static Map<String, List<JBList>> currentListElements;
+    private static Map<String, List<JBList<Object>>> currentListElements;
     private static List<ProjectListWindow> projectListWindows;
 
     public ProjectListManager() {
@@ -32,7 +32,7 @@ public class ProjectListManager {
         currentListElements = new HashMap<>();
     }
 
-    public void addList(JBList list) {
+    public void addList(JBList<Object> list) {
         logger.info("Processing addList. @ProjectListManager");
         currentListElements.computeIfAbsent(list.getName(), k -> new ArrayList<>());
         currentListElements.get(list.getName()).add(list);
@@ -50,16 +50,16 @@ public class ProjectListManager {
 
     public void refreshCourse(String course) {
         logger.info("Refreshing course {}. @ProjectListManager", course);
-        List<JBList> list = currentListElements.get(course);
+        List<JBList<Object>> list = currentListElements.get(course);
         if (list == null) {
             return;
         }
 
-        for (JBList jbList : list) {
+        for (JBList<Object> jbList : list) {
             if (jbList == null || !jbList.getName().equals(course)) {
                 continue;
             }
-            DefaultListModel model = (DefaultListModel) jbList.getModel();
+            DefaultListModel<Object> model = (DefaultListModel<Object>) jbList.getModel();
             model.removeAllElements();
             addExercisesToList(new ObjectFinder(), course, model, new CourseAndExerciseManager());
             jbList.setModel(model);
@@ -68,7 +68,7 @@ public class ProjectListManager {
     }
 
     public void addExercisesToList(ObjectFinder finder,
-                                          String course, DefaultListModel defaultListModel,
+                                          String course, DefaultListModel<Object> defaultListModel,
                                           CourseAndExerciseManager courseAndExerciseManager) {
 
         logger.info("Processing addExercisesToList. @ProjectListManager");
@@ -81,7 +81,7 @@ public class ProjectListManager {
         }
     }
 
-    private void addExercisesToListModel(DefaultListModel listModel,
+    private void addExercisesToListModel(DefaultListModel<Object> listModel,
                                                 List<Exercise> exercises) {
         logger.info("Processing addExercisesToListModel. @ProjectListManager");
         for (Exercise ex : exercises) {
@@ -89,7 +89,7 @@ public class ProjectListManager {
         }
     }
 
-    private void addExercisesToListModelAsStrings(DefaultListModel listModel,
+    private void addExercisesToListModelAsStrings(DefaultListModel<Object> listModel,
                                                          List<String> exercises) {
         logger.info("Processing addExercisesToListModelAsStrings. @ProjectListManager");
         for (String ex : exercises) {

@@ -68,6 +68,12 @@ public class NextExerciseFetcher {
         logger.info("Trying to find next exercise candidate.");
         CourseAndExerciseManager manager = new CourseAndExerciseManager();
         List<Exercise> exercises = manager.getExercises(course);
+        if (exercises == null || exercises.isEmpty()) {
+            return null;
+        }
+        if (exercise == null) {
+            return exercises.stream().filter(ex -> !ex.isCompleted()).findFirst().orElse(null);
+        }
 
         Exercise next = null;
         for (Exercise ex : exercises) {
@@ -87,6 +93,9 @@ public class NextExerciseFetcher {
      * Opens first incomplete exercise in list.
      */
     public static void openFirst(List<Exercise> exercises) {
+        if (exercises == null) {
+            return;
+        }
         for (Exercise ex: exercises) {
             if (!ex.isCompleted()) {
                 new ProjectOpener().openProject(ex
@@ -98,17 +107,21 @@ public class NextExerciseFetcher {
 
     public static void openNext(Project project, SettingsTmc settings) {
         logger.info("Open next project @NextExerciseFetcher.openNext");
-        if ((isCourseSelected(settings)
-                && (projectIsNotOpen(project))
-                && (!hasProjectPath(project)
-                || !isCourseProject(project, settings)))) {
+        if (!isCourseSelected(settings)) {
+            return;
+        }
+        if (project == null
+                || project.getBasePath() == null
+                || !isCourseProject(project, settings)) {
             CourseAndExerciseManager manager = new CourseAndExerciseManager();
-            NextExerciseFetcher.openFirst(manager.getExercises(settings.getCourseName()));
+            NextExerciseFetcher.openFirst(
+                    manager.getExercises(settings.getCurrentCourse().get().getTitle()));
         } else {
             String path = project.getBasePath();
 
 
-            String course = PersistentTmcSettings.getInstance().getSettingsTmc().getCourseName();
+            String course = PersistentTmcSettings.getInstance()
+                    .getSettingsTmc().getCurrentCourse().get().getTitle();
 
             NextExerciseFetcher fetcher = new NextExerciseFetcher(course, PathResolver.getExercise(path), project);
             fetcher.tryToOpenNext();
@@ -120,14 +133,6 @@ public class NextExerciseFetcher {
         return settings.getCurrentCourse().isPresent();
     }
 
-
-    private static boolean projectIsNotOpen(Project project) {
-        return project == null;
-    }
-
-    private static boolean hasProjectPath(Project project) {
-        return project.getBasePath() == null;
-    }
 
     private static boolean isCourseProject(Project project, SettingsTmc settings) {
         return PathResolver.getCourseName(project.getBasePath())

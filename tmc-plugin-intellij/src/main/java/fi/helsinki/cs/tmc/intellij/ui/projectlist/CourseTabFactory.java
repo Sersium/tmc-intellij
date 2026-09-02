@@ -47,10 +47,10 @@ public class CourseTabFactory {
             CourseAndExerciseManager courseAndExerciseManager) {
         logger.info("Creating course specific tab. @CourseTabFactory");
         final JBScrollPane panel = new JBScrollPane();
-        final JBList list = new JBList();
+        final JBList<Object> list = new JBList<>();
         list.setCellRenderer(new ProjectListRenderer());
 
-        DefaultListModel defaultListModel = new DefaultListModel();
+        DefaultListModel<Object> defaultListModel = new DefaultListModel<>();
         panel.setBorder(BorderFactory.createTitledBorder(""));
 
         ProjectListManagerHolder.get()
@@ -133,8 +133,7 @@ public class CourseTabFactory {
                         + File.separator + tabbedPanelBase
                         .getSelectedComponent().getName()));
             } catch (IOException e) {
-                logger.warn("Opening course directory failed.", e.getStackTrace());
-                e.printStackTrace();
+                logger.warn("Opening course directory failed.", e);
             }
         };
     }
@@ -159,9 +158,7 @@ public class CourseTabFactory {
                         + tabbedPanelBase.getSelectedComponent().getName()));
                 new ProjectListWindow().refreshProjectList();
             } catch (IOException e1) {
-                e1.printStackTrace();
-                logger.warn("Deleting course folder failed",
-                        e1, e1.getStackTrace());
+                logger.warn("Deleting course folder failed", e1);
             }
 
         };
@@ -171,7 +168,6 @@ public class CourseTabFactory {
                                       JTabbedPane tabbedPanelBase,
                                       JBScrollPane panel) {
 
-        tabbedPanelBase.addTab(course, panel);
         JScrollBar bar = panel.getVerticalScrollBar();
         AdjustmentListener listener = event -> event.getAdjustable().setValue(event.getAdjustable().getMaximum());
 
@@ -183,7 +179,7 @@ public class CourseTabFactory {
 
     @NotNull
     private MouseListener createMouseListenerForWindow(
-            final ProjectOpener opener, final JBScrollPane panel, final JBList list) {
+            final ProjectOpener opener, final JBScrollPane panel, final JBList<Object> list) {
 
         ObjectFinder finder = new ObjectFinder();
 
@@ -200,7 +196,10 @@ public class CourseTabFactory {
                 }
 
                 Object selectedItem = list.getSelectedValue();
-                if (selectedItem.getClass() == Exercise.class) {
+                if (selectedItem == null) {
+                    return;
+                }
+                if (selectedItem instanceof Exercise) {
                     logger.info("Getting TMC project directory "
                             + " from settingTmc. @CourseTabFactory");
                     opener.openProject(((Exercise) selectedItem)
@@ -223,7 +222,7 @@ public class CourseTabFactory {
     }
 
     private void addRightMouseButtonFunctionality(MouseEvent mouseEvent,
-                                                  final JBList list,
+                                                  final JBList<Object> list,
                                                   JBScrollPane panel) {
 
         logger.info("Adding functionality for right mouse button. @CourseTabFactory");
@@ -232,6 +231,9 @@ public class CourseTabFactory {
         }
 
         int index = list.locationToIndex(mouseEvent.getPoint());
+        if (index < 0) {
+            return;
+        }
         list.setSelectedIndex(index);
         PopUpMenu menu = new PopUpMenu();
         JBMenuItem openInExplorer = new JBMenuItem("Open path");
@@ -250,13 +252,13 @@ public class CourseTabFactory {
     }
 
     @NotNull
-    private ActionListener createOpenInExploreListener(final JBList list,
+    private ActionListener createOpenInExploreListener(final JBList<Object> list,
                                                        final Object selectedItem) {
         return actionEvent -> {
             logger.info("Right mouse button action performed. @CourseTabFactory");
 
             try {
-                if (selectedItem.getClass() != Exercise.class) {
+                if (!(selectedItem instanceof Exercise)) {
                     Desktop.getDesktop().open(new File(TmcSettingsManager
                             .get().getProjectBasePath()
                             + File.separator + list.getParent()
@@ -270,9 +272,7 @@ public class CourseTabFactory {
                                     .get().getTmcProjectDirectory()).toString()));
                 }
             } catch (IOException e1) {
-                logger.warn("IOException occurred. Something interrupted "
-                                + "the mouse action. @CourseTabFactory",
-                        e1, e1.getStackTrace());
+                logger.warn("IOException interrupted the mouse action. @CourseTabFactory", e1);
                 new ErrorMessageService().showErrorMessageWithExceptionDetails(e1,
                         "IOException occurred. Something interrupted the mouse action.",
                         true);
@@ -281,7 +281,7 @@ public class CourseTabFactory {
     }
 
     @NotNull
-    private ActionListener createDeleteButtonActionListener(final JBList list,
+    private ActionListener createDeleteButtonActionListener(final JBList<Object> list,
                                                             final Object selectedItem) {
         return actionEvent -> {
             logger.info("Trying to delete folder. @CourseTabFactory");
@@ -292,7 +292,7 @@ public class CourseTabFactory {
             }
 
             try {
-                if (selectedItem.getClass() != Exercise.class) {
+                if (!(selectedItem instanceof Exercise)) {
                     FileUtils.deleteDirectory(new File(TmcSettingsManager
                             .get().getProjectBasePath()
                             + File.separator + list.getParent()
@@ -307,9 +307,7 @@ public class CourseTabFactory {
                 }
                 new ProjectListWindow().refreshProjectList();
             } catch (IOException e1) {
-                logger.warn("IOException occurred. Something interrupted "
-                                + "the mouse action. @CourseTabFactory",
-                        e1, e1.getStackTrace());
+                logger.warn("IOException interrupted the mouse action. @CourseTabFactory", e1);
                 new ErrorMessageService().showErrorMessageWithExceptionDetails(e1,
                         "IOException occurred. Something interrupted the mouse action.",
                         true);

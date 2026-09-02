@@ -1,8 +1,8 @@
 <idea-plugin>
   <id>fi.helsinki.cs.tmc</id>
   <name>TMC - Test My Code</name>
-  <version>2.1.0</version>
-  <vendor email="" url="https://github.com/testmycode/tmc-intellij"> TMC IntelliJ team @ Github</vendor>
+  <version>2.2.0</version>
+  <vendor url="https://github.com/Sersium/tmc-intellij">TMC IntelliJ contributors</vendor>
 
   <description><![CDATA[
     TMC-IntelliJ is the IntelliJ IDEA plugin for University of Helsinki's TestMyCode framework.
@@ -17,7 +17,8 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      - Next exercise functionality should be working as intended.<br>
+      - Modern IntelliJ IDEA 2026.x compatibility.<br>
+      - Reliable startup, project import, test execution, and Java 26 test support.<br>
     ]]>
   </change-notes>
 
@@ -38,6 +39,8 @@
     <postStartupActivity implementation="fi.helsinki.cs.tmc.intellij.actions.StartupEvent"></postStartupActivity>
     <applicationService serviceImplementation="fi.helsinki.cs.tmc.intellij.services.persistence.PersistentTmcSettings"/>
     <applicationService serviceImplementation="fi.helsinki.cs.tmc.intellij.services.persistence.PersistentExerciseDatabase"/>
+    <notificationGroup id="TMC Notifications" displayType="STICKY_BALLOON" isLogByDefault="true"/>
+    <typedHandler implementation="fi.helsinki.cs.tmc.intellij.actions.ActivateSnapshotsAction"/>
     <!--<applicationConfigurable displayName="TMC Settings" id="TMC Settings" instance="fi.helsinki.cs.tmc.intellij.ui.settings.SettingsPanelLauncher"/>-->
   </extensions>
 

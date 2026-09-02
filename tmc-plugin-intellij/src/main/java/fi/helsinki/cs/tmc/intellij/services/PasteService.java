@@ -79,16 +79,14 @@ public class PasteService {
                                 window.showResult(uri);
                                 updateProjectView(courseAndExerciseManager, projectListManager);
                             } catch (TmcCoreException exception) {
-                                logger.info(
+                                logger.warn(
                                         "Uploading to pastebin failed. @PasteService",
-                                        exception,
-                                        exception.getStackTrace());
+                                        exception);
                                 handleException(exception);
                             } catch (Exception exception) {
-                                logger.info(
+                                logger.warn(
                                         "Uploading to pastebin failed. @PasteService",
-                                        exception,
-                                        exception.getStackTrace());
+                                        exception);
                                 new ErrorMessageService()
                                         .showErrorMessageWithExceptionDetails(
                                                 exception,
@@ -104,7 +102,6 @@ public class PasteService {
         closeWindowIfExists();
 
         new ErrorMessageService().showHumanReadableErrorMessage(exception, false);
-        exception.printStackTrace();
     }
 
     private void closeWindowIfExists() {

@@ -1,6 +1,7 @@
 package fi.helsinki.cs.tmc.intellij.ui.organizationselection;
 
 import com.intellij.ui.JBColor;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import fi.helsinki.cs.tmc.core.domain.Organization;
@@ -9,6 +10,7 @@ import fi.helsinki.cs.tmc.intellij.holders.TmcSettingsManager;
 import javax.swing.*;
 import java.awt.*;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 public class OrganizationCard extends JPanel {
@@ -30,6 +32,9 @@ public class OrganizationCard extends JPanel {
 
         this.organizationName.setText(organization.getName());
         String information = organization.getInformation();
+        if (information == null) {
+            information = "";
+        }
         if (information.length() > 188) {
             information = information.substring(0, 187) + "...";
         }
@@ -42,16 +47,29 @@ public class OrganizationCard extends JPanel {
     private void setLogo() {
         setLogo(logoUrl("placeholderLogo.png"));
         final String logoPath = organization.getLogoPath();
-        if(!logoPath.contains("missing")) {
-            new Thread(() -> {
-                setLogo(logoUrl(logoPath));
-                this.parent.repaint();
-            }).start();
+        if (logoPath != null && !logoPath.contains("missing")) {
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                URL url = logoUrl(logoPath);
+                if (url == null) {
+                    return;
+                }
+                ImageIcon downloadedImage = new ImageIcon(url);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    setLogo(downloadedImage);
+                    this.parent.repaint();
+                });
+            });
         }
     }
 
     private void setLogo(URL logoUrl) {
-        this.image = new ImageIcon(logoUrl);
+        if (logoUrl != null) {
+            setLogo(new ImageIcon(logoUrl));
+        }
+    }
+
+    private void setLogo(ImageIcon image) {
+        this.image = image;
         this.image.setImage(this.image.getImage().getScaledInstance(49, 49, Image.SCALE_SMOOTH));
         this.logo.setIcon(this.image);
     }
@@ -62,6 +80,9 @@ public class OrganizationCard extends JPanel {
 
     private URL logoUrl(String path) {
         final String address = TmcSettingsManager.get().getServerAddress();
+        if (address == null || address.isBlank() || path == null || path.isBlank()) {
+            return null;
+        }
         String url;
         if (address.charAt(address.length() - 1) == '/' && path.charAt(0) == '/') {
             url = address.substring(0, address.length() - 1) + path;
@@ -70,8 +91,8 @@ public class OrganizationCard extends JPanel {
         }
 
         try {
-            return new URL(url);
-        } catch (MalformedURLException e) {
+            return URI.create(url).toURL();
+        } catch (IllegalArgumentException | MalformedURLException e) {
             return null;
         }
     }

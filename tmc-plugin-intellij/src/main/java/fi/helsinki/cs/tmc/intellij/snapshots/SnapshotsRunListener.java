@@ -16,7 +16,7 @@ public class SnapshotsRunListener {
 
     private void connectToMessageBus(Project project) {
         logger.info("Connecting to message bus.");
-        MessageBusConnection bus = project.getMessageBus().connect();
+        MessageBusConnection bus = project.getMessageBus().connect(project);
         bus.setDefaultHandler(
                 (method, objects) -> {
                     logger.info("Method call observed in message bus.");

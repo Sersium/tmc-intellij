@@ -52,7 +52,7 @@ public class ExerciseUploadingService {
         String[] exerciseCourse = PathResolver.getCourseAndExerciseName(project);
         Course course = finder.findCourse(getCourseName(exerciseCourse), "name");
 
-        if (!courseAndExerciseManager.isCourseInDatabase(course.getTitle())) {
+        if (course == null || !courseAndExerciseManager.isCourseInDatabase(course.getTitle())) {
             Messages.showErrorDialog(project, "Project not identified as TMC exercise", "Error");
             return;
         }
@@ -106,21 +106,13 @@ public class ExerciseUploadingService {
                     try {
                         getSubmissionResult(core, observer, exercise, handler, project);
                     } catch (TmcCoreException exception) {
-                        logger.warn(
-                                "Could not getExercise submission results. "
-                                        + "@ExerciseUploadingService",
-                                exception,
-                                exception.getStackTrace());
-                        exception.printStackTrace();
+                        logger.warn("Could not get exercise submission results. "
+                                + "@ExerciseUploadingService", exception);
 
                         new ErrorMessageService().showHumanReadableErrorMessage(exception, true);
                     } catch (Exception exception) {
-                        logger.warn(
-                                "Could not getExercise submission results. "
-                                        + "@ExerciseUploadingService",
-                                exception,
-                                exception.getStackTrace());
-                        exception.printStackTrace();
+                        logger.warn("Could not get exercise submission results. "
+                                + "@ExerciseUploadingService", exception);
                     }
                 },
                 project,

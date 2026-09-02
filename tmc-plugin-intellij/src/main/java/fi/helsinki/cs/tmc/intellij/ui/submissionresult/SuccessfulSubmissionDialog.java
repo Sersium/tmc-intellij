@@ -140,8 +140,7 @@ public class SuccessfulSubmissionDialog extends JDialog {
             logger.warn(
                     "Failed to send feedback. Problems with internet. "
                             + "@SuccessfulSubmissionDialog",
-                    ex,
-                    ex.getStackTrace());
+                    ex);
             String errorMessage = "Problems with internet.\n" + ex.getMessage();
             Messages.showErrorDialog(project, errorMessage, "Problem with Internet");
         }
@@ -253,8 +252,7 @@ public class SuccessfulSubmissionDialog extends JDialog {
                     logger.warn(
                             "Failed to open browser. "
                                     + "Problem with browser. @SuccessfulSubmissionDialog",
-                            ex,
-                            ex.getStackTrace());
+                            ex);
                     new ErrorMessageService()
                             .showErrorMessageWithExceptionDetails(
                                     ex, "Failed to open browser. Problem with browser.", true);

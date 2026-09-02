@@ -1,72 +1,53 @@
-[![Build Status](https://travis-ci.org/testmycode/tmc-intellij.svg?branch=master)](https://travis-ci.org/testmycode/tmc-intellij)
+# TMC for IntelliJ IDEA
 
-[![Coverage Status](https://coveralls.io/repos/github/testmycode/tmc-intellij/badge.svg?branch=master)](https://coveralls.io/github/testmycode/tmc-intellij?branch=master)
+TMC for IntelliJ IDEA integrates the University of Helsinki Test My Code service with modern IntelliJ IDEA versions. It downloads course exercises, runs the bundled tests, submits solutions, and displays submission feedback inside the IDE. The main target is the University of Helsinki [Java Programming MOOC](https://java-programming.mooc.fi/).
 
-# TMC plugin for IntelliJ IDEA
+This fork targets IntelliJ IDEA 2026.1 and newer (`since-build 261`) and produces Java 21-compatible plugin bytecode. Both Community and Ultimate editions are supported when the bundled Java plugin is available.
 
-TMC-IntelliJ is the IntelliJ IDEA plugin for University of Helsinki's TestMyCode framework. TestMyCode is used by various online programming courses for exercise testing and submitting.
+## Build and test
 
-The plugin is available to be downloaded through the Jetbrains plugin repository.
-- [Instructions here](https://github.com/ohtu-intellij/tmc-intellij/wiki)
+Requirements:
 
-## If you want to develop the plugin yourself, please refer to the instructions below:
+- JDK 26
+- Internet access on the first build so Gradle can download IntelliJ IDEA and test dependencies
 
-#### Requirements
+The Gradle wrapper pins the build tool version:
 
-* Java Runtime Environment 8
-* Linux, Mac OS X or Microsoft Windows
-  * Other Unix-like systems may work, but are not tested
-* IntelliJ IDEA, Community or Ultimate version
+```bash
+./gradlew clean test buildPlugin verifyPlugin
+```
 
-#### Setting up the project locally
+The installable ZIP is created under `build/distributions/`. To install it, open IntelliJ IDEA, choose **Settings > Plugins**, use the gear menu, and select **Install Plugin from Disk**.
 
-Once you have the code on your local environment:
+To start an isolated development IDE:
 
-* open the project in your IntelliJ IDEA (both Community and Ultimate versions do).
-* open `File` -> `Project Structure`.
-* set the Project SDK to be the IntelliJ Platform Plugin SDK (it might try to give you only an invalid SDK as an option at first, but in that case press the `New...` button to choose the Plugin SDK.
-* in case you haven't set up the home directory for JDK earlier for IntelliJ IDEA, it will request that first. The plugin uses Java 8.
-* after that IntelliJ should ask you to give the home directory for the Plugin SDK. Choose the directory where you installed IntelliJ IDEA.
-*  now, the SDK should be set, but to be sure, also check in `Modules` section of `Project Structure` that the SDK is the same in both `tmc-intellij` and `tmc-plugin-intellij` modules (`Dependencies` tab).
-* go to any Java class in the source files. At the bottom of IntelliJ IDEA there should be a request to import Maven dependencies. Accept that. If you don't see the request, open `View` -> `Tool Windows` -> `Event log`.
+```bash
+./gradlew runIde
+```
 
-Now everything should be ready and all the code compilable.
+To test with a specific local IntelliJ IDEA installation instead of the default 2026.1 test platform:
 
-#### How to run the plugin
-*Note, again, this is just if you want to develop it. If you actually want to use the plugin to submit your course exercises, then you might want to refer to the instructions above about the alpha version.*
+```bash
+./gradlew -PlocalPlatformPath=/absolute/path/to/intellij-idea runIde
+```
 
-* choose `Run` -> `Run`. IntelliJ IDEA should open up a small window suggesting to edit configurations. Click that.
-* add new configuratino by clicking the `+` icon at top left and choose Plugin.
-* you might want to name the configuration as "Plugin" or something like that, but otherwise the default settings should be fine.
-* press OK to finish and run the plugin.
+The old TMC Maven repository is no longer available, so the historical TMC Core runtime and its transitive dependencies remain vendored in `libs/`. Current build and test dependencies are resolved normally by Gradle.
 
-A new window for IntelliJ IDEA will open up and the Plugin will be active in that window so you can test out the TMC functions as you wish.
+## Using the plugin
 
----
+1. Open **Settings > TMC Settings** and sign in with your TMC account.
+2. Select the University of Helsinki organization and the desired MOOC course.
+3. Download exercises from the TMC menu or toolbar.
+4. Open a downloaded exercise and use **Run tests**.
+5. Submit after the tests pass and review the result in the TMC Test Results tool window.
 
-## Deployment
+TMC server access requires a valid account. Unit tests and IDE compatibility checks do not require credentials.
 
-New releases may be uploaded to: https://plugins.jetbrains.com/plugin/8551 
+## Project history
 
----
+The original plugin was developed for the University of Helsinki's RAGE team during the Software Production Project course in summer 2016. This fork preserves that implementation while updating its IntelliJ Platform integration and build for current IDE releases.
 
+Upstream projects:
 
-##Credits
-This plugin was developed for RAGE team of the department of Computer Science in University of Helsinki during course Software Production Project, Summer 2016.
-
-#### Original developers
-
-* Samu Kauppinen ([Rubiini](https://github.com/Rubiini))
-* Konsta Kutvonen ([Djiffit](https://github.com/Djiffit))
-* Henri Manninen ([Melchan](https://github.com/Melchan))
-* Miika Leinonen ([Denopia](https://github.com/Denopia))
-* Tuomo Oila ([tuomokar](https://github.com/tuomokar))
-
-#### Instructor
-
-* Esa Harju
-
-#### Clients
-
-* Leo Leppänen ([ljleppan](https://github.com/ljleppan))
-* Jarmo Isotalo ([jamox](https://github.com/jamox))
+- [testmycode/tmc-intellij](https://github.com/testmycode/tmc-intellij)
+- [thomaslabeyrie/tmc-intellij](https://github.com/thomaslabeyrie/tmc-intellij)

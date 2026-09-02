@@ -17,9 +17,6 @@ import fi.helsinki.cs.tmc.intellij.services.logging.PropertySetter;
 import fi.helsinki.cs.tmc.intellij.snapshots.ActivateSnapshotsListeners;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.actionSystem.EditorActionManager;
-import com.intellij.openapi.editor.actionSystem.TypedAction;
-import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
 import com.intellij.openapi.progress.util.ProgressWindow;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.ProjectActivity;
@@ -67,11 +64,6 @@ public class StartupEvent implements ProjectActivity {
                         "Running TMC startup actions.", project, false, false, false);
 
         CoreProgressObserver observer = new CoreProgressObserver(progressWindow);
-        new ErrorMessageService()
-                .showInfoBalloon(
-                        "The Test My Code Plugin for Intellij is in BETA and"
-                                + " may not work properly. Use at your own risk. ");
-
         threadingService.runWithNotification(
                 new Thread(
                         () -> {
@@ -81,40 +73,28 @@ public class StartupEvent implements ProjectActivity {
                             setupCoreHolder(observer);
                             setupSnapshots(observer, project);
                             setupDatabase(observer);
-                            setupHandlersForSnapshots(observer);
-
                             if (TmcSettingsManager.get().getFirstRun()) {
                                 TmcSettingsManager.get().setFirstRun(false);
                             } else {
                                 sendDiagnostics(observer);
                             }
 
-                            checkForNewExercises(observer);
+                            checkForNewExercises(observer, project);
 
-                            ApplicationManager.getApplication()
-                                    .invokeLater(
-                                            () -> {
-                                                while (project.isDisposed()) {
-                                                    try {
-                                                        Thread.sleep(5);
-                                                    } catch (Exception e) {
-
-                                                    }
-                                                }
-
-                                                if (ToolWindowManager.getInstance(project)
-                                                                .getToolWindow("Project")
-                                                        != null) {
-                                                    ToolWindowManager.getInstance(project)
-                                                            .getToolWindow("Project")
-                                                            .activate(null);
-                                                }
-                                            });
+                            ApplicationManager.getApplication().invokeLater(() -> {
+                                if (project.isDisposed()) {
+                                    return;
+                                }
+                                if (ToolWindowManager.getInstance(project)
+                                                .getToolWindow("Project") != null) {
+                                    ToolWindowManager.getInstance(project)
+                                            .getToolWindow("Project").activate(null);
+                                }
+                                showLoginWindow();
+                            });
                         }),
                 project,
                 progressWindow);
-
-        showLoginWindow();
     }
 
     private void setupLoggers(ProgressObserver observer) {
@@ -145,18 +125,10 @@ public class StartupEvent implements ProjectActivity {
         }
     }
 
-    private void setupHandlersForSnapshots(ProgressObserver observer) {
-        observer.progress(0, 0.70, "Setting handlers");
-        final EditorActionManager actionManager = EditorActionManager.getInstance();
-        final TypedAction typedAction = actionManager.getTypedAction();
-        TypedActionHandler originalHandler = actionManager.getTypedAction().getHandler();
-        typedAction.setupHandler(new ActivateSnapshotsAction(originalHandler));
-    }
-
-    private void checkForNewExercises(ProgressObserver observer) {
+    private void checkForNewExercises(ProgressObserver observer, Project project) {
         observer.progress(0, 0.84, "Checking for new exercises");
         if (TmcSettingsManager.get().isCheckForExercises()) {
-            new CheckForNewExercises().doCheck();
+            new CheckForNewExercises().doCheck(project);
         }
     }
 
@@ -165,6 +137,7 @@ public class StartupEvent implements ProjectActivity {
             try {
                 TmcCoreHolder.get().sendDiagnostics(observer).call();
             } catch (Exception e) {
+                logger.debug("Failed to send diagnostics.", e);
             }
         }
     }
@@ -198,7 +171,9 @@ public class StartupEvent implements ProjectActivity {
         if (settingsTmc.getPassword().isPresent()) {
             this.tryToMigratePasswordToOAuthToken();
         }
-        if (!settingsTmc.getToken().isPresent() || settingsTmc.getServerAddress().isEmpty()) {
+        if (!settingsTmc.getToken().isPresent()
+                || settingsTmc.getServerAddress() == null
+                || settingsTmc.getServerAddress().isBlank()) {
             LoginDialog.display();
         }
     }

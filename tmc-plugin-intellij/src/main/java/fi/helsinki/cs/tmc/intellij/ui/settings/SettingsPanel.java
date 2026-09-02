@@ -123,7 +123,7 @@ public class SettingsPanel {
 
         if (settings.getCurrentCourse().isPresent()
                 && settings.getCurrentCourse().get().getTitle() != null) {
-            currentCourse.setText(settings.getCourseName());
+            currentCourse.setText(settings.getCurrentCourse().get().getTitle());
         } else {
             currentCourse.setText("No course selected");
         }
@@ -193,7 +193,7 @@ public class SettingsPanel {
             try {
                 OrganizationListWindow.display();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warn("Could not display organization list window.", e);
             }
         };
     }
@@ -203,7 +203,7 @@ public class SettingsPanel {
             try {
                 CourseListWindow.display();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warn("Could not display course list window.", e);
             }
         };
     }
@@ -322,7 +322,7 @@ public class SettingsPanel {
         panel1.add(sendDiagnosticsCheckBox, new GridConstraints(7, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator3 = new JSeparator();
         panel1.add(separator3, new GridConstraints(8, 0, 1, 6, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        selectErrorLanguageField = new JComboBox();
+        selectErrorLanguageField = new JComboBox<>();
         panel1.add(selectErrorLanguageField, new GridConstraints(9, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         label1.setText("Error message language");

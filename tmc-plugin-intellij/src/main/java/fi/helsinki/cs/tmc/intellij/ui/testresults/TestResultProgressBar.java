@@ -1,14 +1,14 @@
 package fi.helsinki.cs.tmc.intellij.ui.testresults;
 
 import com.intellij.ui.JBColor;
-import com.intellij.ui.JBProgressBar;
 
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import javax.swing.JProgressBar;
 
-public class TestResultProgressBar extends JBProgressBar {
+public class TestResultProgressBar extends JProgressBar {
     private boolean validationPass;
 
     public TestResultProgressBar() {

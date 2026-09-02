@@ -94,8 +94,7 @@ public class ExerciseDownloadingService {
                 logger.warn(
                         "Failed to check available exercises. "
                                 + "Course not selected. @ExerciseDownloadingService",
-                        except,
-                        except.getStackTrace());
+                        except);
                 new ErrorMessageService()
                         .showErrorMessageWithExceptionDetails(
                                 except,
