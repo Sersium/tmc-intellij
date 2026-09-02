@@ -147,41 +147,13 @@ public class RunConfigurationFactory {
             return true;
         }
 
-        Boolean hasMainClass = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
-                (com.intellij.openapi.util.Computable<Boolean>) () -> {
-                    try {
-                        return appCon.getMainClass() != null;
-                    } catch (Throwable t) {
-                        return false;
-                    }
-                });
-
-        if (Boolean.TRUE.equals(hasMainClass)) {
-            return true;
-        }
-
         logger.info("No main class was found, prompting user to choose one.");
-        final TreeClassChooser[] chooserHolder = new TreeClassChooser[1];
-        if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
-            chooserHolder[0] = chooseMainClassForProject();
-        } else {
-            com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() -> {
-                chooserHolder[0] = chooseMainClassForProject();
-            });
-        }
-
-        TreeClassChooser chooser = chooserHolder[0];
+        TreeClassChooser chooser = chooseMainClassForProject();
         if (chooser == null || chooser.getSelected() == null) {
             return false;
         }
 
-        Runnable configure = () -> configApplicationConfiguration(chooser);
-        if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
-            com.intellij.openapi.application.WriteIntentReadAction.run(configure);
-        } else {
-            com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() ->
-                    com.intellij.openapi.application.WriteIntentReadAction.run(configure));
-        }
+        configApplicationConfiguration(chooser);
         return true;
     }
 }

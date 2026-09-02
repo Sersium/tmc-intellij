@@ -74,6 +74,8 @@ public class ProjectListWindow {
                 com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
                 if (project != null) {
                     new fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunProjectAction().runProject(project);
+                } else {
+                    new fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService().showInfoBalloon("No active project found to run.");
                 }
             });
 
@@ -83,6 +85,8 @@ public class ProjectListWindow {
                 com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
                 if (project != null) {
                     new fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunTestsAction().runTestsForProject(project);
+                } else {
+                    new fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService().showInfoBalloon("No active project found to test.");
                 }
             });
 
@@ -92,6 +96,8 @@ public class ProjectListWindow {
                 com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
                 if (project != null) {
                     new fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction().uploadExercise(project);
+                } else {
+                    new fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService().showInfoBalloon("No active project found to submit.");
                 }
             });
 

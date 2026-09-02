@@ -66,27 +66,24 @@ public class RunProjectAction extends AnAction {
             return;
         }
 
-        com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
-            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                try {
-                    logger.info("Getting RunManager.");
-                    RunManager runManager = RunManager.getInstance(project);
-                    Module module = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
-                            (com.intellij.openapi.util.Computable<Module>) () -> getModule(project));
-                    if (module == null) {
-                        logger.warn("No module found for running project.");
-                        return;
-                    }
-                    String configurationType = getConfigurationType();
-                    logger.info("Creating RunProject object.");
-                    new RunProject(runManager, module, configurationType);
-                } catch (Throwable t) {
-                    logger.warn("Failed to run project", t);
-                } finally {
-                    fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+        try {
+            com.intellij.openapi.application.WriteIntentReadAction.run(() -> {
+                logger.info("Getting RunManager.");
+                RunManager runManager = RunManager.getInstance(project);
+                Module module = getModule(project);
+                if (module == null) {
+                    logger.warn("No module found for running project.");
+                    return;
                 }
+                String configurationType = getConfigurationType();
+                logger.info("Creating RunProject object.");
+                new RunProject(runManager, module, configurationType);
             });
-        });
+        } catch (Throwable t) {
+            logger.warn("Failed to run project", t);
+        } finally {
+            fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+        }
     }
 
     @NotNull

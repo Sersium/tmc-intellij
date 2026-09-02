@@ -24,30 +24,14 @@ public class RunProject {
     private boolean makeSureConfigurationIsCorrectType(RunManager runManager) {
         if (runManager.getSelectedConfiguration() == null || factory.checkConfigurationType()) {
             logger.info("Prompting user to choose main class with Chooser.");
-            final TreeClassChooser[] chooserHolder = new TreeClassChooser[1];
-            if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
-                chooserHolder[0] = factory.chooseMainClassForProject();
-            } else {
-                com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() -> {
-                    chooserHolder[0] = factory.chooseMainClassForProject();
-                });
-            }
-            TreeClassChooser chooser = chooserHolder[0];
+            TreeClassChooser chooser = factory.chooseMainClassForProject();
             if (chooser == null || chooser.getSelected() == null) {
                 logger.warn("Choosing main class returned null and running is cancelled.");
                 return true;
             }
             logger.info("Creating configurations.");
-            Runnable createAndConfig = () -> {
-                factory.createConfiguration();
-                factory.configApplicationConfiguration(chooser);
-            };
-            if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
-                com.intellij.openapi.application.WriteIntentReadAction.run(createAndConfig);
-            } else {
-                com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() ->
-                        com.intellij.openapi.application.WriteIntentReadAction.run(createAndConfig));
-            }
+            factory.createConfiguration();
+            factory.configApplicationConfiguration(chooser);
         }
         return false;
     }
