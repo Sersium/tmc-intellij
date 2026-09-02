@@ -7,6 +7,9 @@ import com.intellij.openapi.progress.util.ProgressWindow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+
 public class CoreProgressObserver extends ProgressObserver {
 
     private final ProgressWindow progressWindow;
@@ -20,7 +23,15 @@ public class CoreProgressObserver extends ProgressObserver {
     public void progress(long mysteryLong, String status) {
         logger.info("Setting progress status. @CoreProgressObserver");
         try {
+            ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+            if (indicator != null) {
+                if (status != null && !status.isEmpty()) {
+                    indicator.setText(status);
+                }
+                indicator.checkCanceled();
+            }
             if (progressWindow != null) {
+                progressWindow.setText(status);
                 progressWindow.setText2(status);
                 progressWindow.checkCanceled();
             }
@@ -32,7 +43,21 @@ public class CoreProgressObserver extends ProgressObserver {
     public void progress(long mysteryLong, Double progress, String status) {
         logger.info("Setting progress status. @CoreProgressObserver");
         try {
+            ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+            if (indicator != null) {
+                if (status != null && !status.isEmpty()) {
+                    indicator.setText(status);
+                }
+                if (progress != null) {
+                    if (indicator.isIndeterminate()) {
+                        indicator.setIndeterminate(false);
+                    }
+                    indicator.setFraction(progress);
+                }
+                indicator.checkCanceled();
+            }
             if (progressWindow != null) {
+                progressWindow.setText(status);
                 progressWindow.setText2(status);
                 if (progress != null) {
                     if (progressWindow.isIndeterminate()) {

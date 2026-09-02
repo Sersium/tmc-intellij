@@ -7,6 +7,7 @@ import fi.helsinki.cs.tmc.intellij.services.PathResolver;
 import fi.helsinki.cs.tmc.intellij.services.TestRunningService;
 import fi.helsinki.cs.tmc.intellij.services.ThreadingService;
 import fi.helsinki.cs.tmc.intellij.services.exercises.CourseAndExerciseManager;
+import fi.helsinki.cs.tmc.intellij.services.errors.ErrorMessageService;
 import fi.helsinki.cs.tmc.intellij.snapshots.ButtonInputListener;
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
@@ -53,6 +54,7 @@ public class RunTestsAction extends AnAction {
 
         String[] courseExercise = PathResolver.getCourseAndExerciseName(project);
         if (courseExercise == null || courseExercise.length < 2) {
+            new ErrorMessageService().showInfoBalloon("Active project is not recognized as a TMC exercise.");
             return;
         }
 
@@ -64,7 +66,15 @@ public class RunTestsAction extends AnAction {
             course = new ObjectFinder().findCourse(courseName, "title");
         }
 
-        FileDocumentManager.getInstance().saveAllDocuments();
+        try {
+            com.intellij.openapi.application.WriteIntentReadAction.run(() ->
+                    FileDocumentManager.getInstance().saveAllDocuments());
+        } catch (Throwable t) {
+            try {
+                FileDocumentManager.getInstance().saveAllDocuments();
+            } catch (Throwable ignored) {
+            }
+        }
 
         new ButtonInputListener().receiveTestRun();
 
@@ -81,6 +91,8 @@ public class RunTestsAction extends AnAction {
                             project,
                             new ThreadingService(),
                             new ObjectFinder());
+        } else {
+            new ErrorMessageService().showInfoBalloon("Could not find exercise '" + exerciseName + "' in TMC database.");
         }
     }
 

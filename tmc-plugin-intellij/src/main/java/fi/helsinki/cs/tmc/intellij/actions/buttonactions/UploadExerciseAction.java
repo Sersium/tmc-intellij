@@ -57,7 +57,15 @@ public class UploadExerciseAction extends AnAction {
         }
 
         new ButtonInputListener().receiveSubmit();
-        FileDocumentManager.getInstance().saveAllDocuments();
+        try {
+            com.intellij.openapi.application.WriteIntentReadAction.run(() ->
+                    FileDocumentManager.getInstance().saveAllDocuments());
+        } catch (Throwable t) {
+            try {
+                FileDocumentManager.getInstance().saveAllDocuments();
+            } catch (Throwable ignored) {
+            }
+        }
 
         ProgressWindow window =
                 ProgressWindowMaker.make(
@@ -68,10 +76,7 @@ public class UploadExerciseAction extends AnAction {
                         true);
         CoreProgressObserver observer = new CoreProgressObserver(window);
 
-        new ThreadingService().runWithNotification(
-                () -> callExerciseUploadService(project, observer, window),
-                project,
-                window);
+        callExerciseUploadService(project, observer, window);
     }
 
     private void callExerciseUploadService(
