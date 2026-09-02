@@ -68,9 +68,41 @@ public class ProjectListWindow {
             createCourseSpecificTabs(finder, opener, tabbedPaneBase,
                 courses, factory, new CourseAndExerciseManager());
 
+            JButton runButton = new JButton("Run", TmcIcons.RUN_BUTTON);
+            runButton.setToolTipText("Run current project (TMC Run)");
+            runButton.addActionListener(e -> {
+                com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
+                if (project != null) {
+                    new fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunProjectAction().runProject(project);
+                }
+            });
+
+            JButton testButton = new JButton("Test", TmcIcons.TEST_BUTTON);
+            testButton.setToolTipText("Run TMC Tests (Shift+Alt+T)");
+            testButton.addActionListener(e -> {
+                com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
+                if (project != null) {
+                    new fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunTestsAction().runTestsForProject(project);
+                }
+            });
+
+            JButton submitButton = new JButton("Submit", TmcIcons.SUBMIT_BUTTON);
+            submitButton.setToolTipText("Submit to TMC Server (Shift+Alt+U)");
+            submitButton.addActionListener(e -> {
+                com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
+                if (project != null) {
+                    new fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction().uploadExercise(project);
+                }
+            });
+
             JButton refreshButton = addFunctionalityToRefreshButton();
-            // TODO: refresh button not working
-            // toolbar.add(refreshButton);
+            refreshButton.setToolTipText("Refresh exercise list");
+
+            toolbar.add(runButton);
+            toolbar.add(testButton);
+            toolbar.add(submitButton);
+            toolbar.add(refreshButton);
+
             setActiveTabToSelectedCourse();
         } else {
             JPanel emptyPanel = new JPanel();

@@ -39,11 +39,7 @@ public class RunConfigurationFactory {
     public boolean checkConfigurationType() {
         logger.info("Checking configurationType.");
         RunnerAndConfigurationSettings selected = runManager.getSelectedConfiguration();
-        return selected == null || !selected
-                .getConfiguration()
-                .getType()
-                .getDisplayName()
-                .equals(configurationType);
+        return selected == null || !(selected.getConfiguration() instanceof ApplicationConfiguration);
     }
 
     /** Ui for the user to pick the Main class. */

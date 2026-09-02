@@ -46,46 +46,54 @@
 
 
   <actions>
-    <group id="TMC.Menu" text="TMC" description="TMC Menu">
-      <add-to-group group-id="MainMenu" anchor="last"  />
-
-      <action id="Settings" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.TmcSettingsAction" text="Settings" description="TMC Settings" />
-      <action id="Upload Exercise" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction" text="Submit to TMC Server" description="Submit exercise to TMC" />
-      <action id="Download Exercises" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.DownloadExerciseAction" text="Download current course's exercises" description="Download exercise" />
-      <action id="Open TMC Exercise List" class="fi.helsinki.cs.tmc.intellij.actions.OpenToolWindowAction" text="Open TMC Exercise List" description="Open TMC Exercise List" />
-      <action id="Open Next Exercise" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.OpenNextExerciseAction" text="Open Next Exercise" description="Open TMC Next Exercise" />
-      <action id="Pastebin" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.SubmitPasteAction" text="Submit code to TMC Pastebin" description="Submit code to TMC Pastebin" />
-      <action id="Run Project" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunProjectAction" text="Run Project" description="Run Project" />
-      <action id="Run Tests" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunTestsAction" text="Run TMC Tests" description="Run tests for current project" />
-      <action id="Download ALL Exercises" class="fi.helsinki.cs.tmc.intellij.actions.DownloadAllExercisesAction" text="Download current course's ALL exercises" description="Download all exercise" />
-      <action id="About TMC" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.ShowAboutTmcAction" text="About TMC" description="About TMC" />
-    </group>
-
-    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.TmcSettingsAction" text="Get started with TMC" description="Get started with TMC" id="TmcSettingsAction" icon="TmcIcons.RUN_BUTTON" >
-      <add-to-group group-id="WelcomeScreen.QuickStart" anchor="first" />
+    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunProjectAction" text="TMC Run" description="Run current project (TMC Run)" id="RunProjectAction" icon="/icons/runbutton.png">
+      <keyboard-shortcut keymap="$default" first-keystroke="shift alt R"/>
     </action>
 
-    <action class="fi.helsinki.cs.tmc.intellij.actions.OpenToolWindowAction" text="Open TMC Exercise List" description="Open TMC Exercise list" id="OpenListAction"  icon="TmcIcons.SIDE_PANEL" >
-      <add-to-group group-id="NavBarToolBar" anchor="first" />
-      <add-to-group group-id="MainToolbarRight" anchor="first" />
-    </action>
-
-    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction" text="Submit to TMC Server" description="Submit exercise to TMC" id="SubmitButtonAction" icon="TmcIcons.SUBMIT_BUTTON" >
-      <add-to-group group-id="NavBarToolBar" anchor="first" />
-      <add-to-group group-id="MainToolbarRight" anchor="first" />
-      <keyboard-shortcut keymap="$default" first-keystroke="shift alt U"/>
-    </action>
-
-    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunTestsAction" text="Run TMC Tests" description="Run tests for current project" id="RunTestsAction" icon="TmcIcons.TEST_BUTTON" >
-      <add-to-group group-id="NavBarToolBar" anchor="first" />
-      <add-to-group group-id="MainToolbarRight" anchor="first" />
+    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunTestsAction" text="TMC Test" description="Run TMC tests for current project" id="RunTestsAction" icon="/icons/testbutton.png">
       <keyboard-shortcut keymap="$default" first-keystroke="shift alt T"/>
     </action>
 
-    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.RunProjectAction" text="Run current project" description="Run project" id="RunProjectAction" icon="TmcIcons.RUN_BUTTON" >
-      <add-to-group group-id="NavBarToolBar" anchor="first" />
+    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction" text="TMC Submit" description="Submit current exercise to TMC server" id="SubmitButtonAction" icon="/icons/submit.png">
+      <keyboard-shortcut keymap="$default" first-keystroke="shift alt U"/>
     </action>
 
+    <action class="fi.helsinki.cs.tmc.intellij.actions.OpenToolWindowAction" text="TMC Exercise List" description="Open TMC exercise list" id="OpenListAction" icon="/icons/sidepanel_new.png">
+      <keyboard-shortcut keymap="$default" first-keystroke="shift alt L"/>
+    </action>
+
+    <action class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.TmcSettingsAction" text="Get started with TMC" description="Get started with TMC" id="TmcSettingsAction" icon="/icons/runbutton.png">
+      <add-to-group group-id="WelcomeScreen.QuickStart" anchor="first" />
+    </action>
+
+    <group id="TMC.ToolbarGroup" text="TMC Actions">
+      <add-to-group group-id="MainToolbarRight" anchor="before" relative-to-action="NewUiRunWidget" />
+      <add-to-group group-id="MainToolbarLeft" anchor="last" />
+      <add-to-group group-id="NavBarToolBar" anchor="first" />
+      <add-to-group group-id="MainToolBar" anchor="first" />
+      <add-to-group group-id="ToolbarRunGroup" anchor="first" />
+      <reference ref="RunProjectAction"/>
+      <reference ref="RunTestsAction"/>
+      <reference ref="SubmitButtonAction"/>
+      <reference ref="OpenListAction"/>
+    </group>
+
+    <group id="TMC.Menu" text="TMC" description="TMC Menu">
+      <add-to-group group-id="MainMenu" anchor="last" />
+      <reference ref="RunProjectAction"/>
+      <reference ref="RunTestsAction"/>
+      <reference ref="SubmitButtonAction"/>
+      <separator/>
+      <reference ref="OpenListAction"/>
+      <action id="Open Next Exercise" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.OpenNextExerciseAction" text="Open Next Exercise" description="Open TMC Next Exercise" />
+      <separator/>
+      <action id="Download Exercises" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.DownloadExerciseAction" text="Download current course's exercises" description="Download exercise" />
+      <action id="Download ALL Exercises" class="fi.helsinki.cs.tmc.intellij.actions.DownloadAllExercisesAction" text="Download current course's ALL exercises" description="Download all exercise" />
+      <action id="Pastebin" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.SubmitPasteAction" text="Submit code to TMC Pastebin" description="Submit code to TMC Pastebin" />
+      <separator/>
+      <action id="Settings" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.TmcSettingsAction" text="Settings" description="TMC Settings" />
+      <action id="About TMC" class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.ShowAboutTmcAction" text="About TMC" description="About TMC" />
+    </group>
   </actions>
 
 </idea-plugin>

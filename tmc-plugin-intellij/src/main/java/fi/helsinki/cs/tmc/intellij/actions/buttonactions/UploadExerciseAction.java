@@ -13,25 +13,37 @@ import fi.helsinki.cs.tmc.intellij.services.exercises.ExerciseUploadingService;
 import fi.helsinki.cs.tmc.intellij.snapshots.ButtonInputListener;
 import fi.helsinki.cs.tmc.intellij.ui.submissionresult.SubmissionResultHandler;
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.util.ProgressWindow;
 import com.intellij.openapi.project.Project;
-
+import icons.TmcIcons;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Uploads the currently active project to TMC Server Defined in plugin.xml on the line &lt;action
- * id="Upload Exercise"
- * class="fi.helsinki.cs.tmc.intellij.actions.buttonactions.UploadExerciseAction"&gt; Uses
- * CourseAndExerciseManager to update the view after upload, SubmissionResultHandler displays the
- * returned results
- */
 public class UploadExerciseAction extends AnAction {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadExerciseAction.class);
+
+    public UploadExerciseAction() {
+        super("TMC Submit", "Submit current exercise to TMC server", TmcIcons.SUBMIT_BUTTON);
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+
+    @Override
+    public void update(@NotNull AnActionEvent e) {
+        e.getPresentation().setEnabledAndVisible(true);
+        e.getPresentation().setIcon(TmcIcons.SUBMIT_BUTTON);
+        e.getPresentation().setText("TMC Submit");
+        e.getPresentation().setDescription("Submit current exercise to TMC server");
+    }
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {

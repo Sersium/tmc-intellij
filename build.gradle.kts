@@ -49,6 +49,8 @@ dependencies {
     // Apache Ant is required by fi.helsinki.cs.tmc.langs.util.ProjectType
     // (BuildException referenced from <clinit>) but is not vendored under libs/.
     implementation("org.apache.ant:ant:1.10.14")
+    implementation("org.apache.maven.shared:maven-invoker:3.2.0")
+    implementation("org.apache.maven.shared:maven-shared-utils:3.4.2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.23.0")
