@@ -1,5 +1,6 @@
 package fi.helsinki.cs.tmc.intellij.ui.projectlist;
 
+import fi.helsinki.cs.tmc.core.domain.Course;
 import fi.helsinki.cs.tmc.core.domain.Exercise;
 import fi.helsinki.cs.tmc.intellij.holders.ProjectListManagerHolder;
 import fi.helsinki.cs.tmc.intellij.holders.TmcSettingsManager;
@@ -207,14 +208,19 @@ public class CourseTabFactory {
                                     .getTmcProjectDirectory()));
                 } else {
                     try {
-                        String courseName = finder.findCourse(list.getParent().getParent().getName(), "title").getName();
-                        opener.openProject(TmcSettingsManager.get().getProjectBasePath()
+                        String tabCourse = (panel != null && panel.getName() != null) ? panel.getName() : "";
+                        Course course = finder.findCourse(tabCourse, "name");
+                        if (course == null) {
+                            course = finder.findCourse(tabCourse, "title");
+                        }
+                        String courseName = (course != null) ? course.getName() : tabCourse;
+                        String exercisePath = TmcSettingsManager.get().getProjectBasePath()
                                 + File.separator + courseName
-                                + File.separator + selectedItem, courseName);
-                    } catch (NullPointerException e) {
-                        new ErrorMessageService().showErrorMessageWithExceptionDetails(e, "Course doesn't belong to the current organization", true);
+                                + File.separator + selectedItem;
+                        opener.openProject(exercisePath, courseName);
+                    } catch (Exception e) {
+                        logger.warn("Failed to open exercise from string item: {}", e.getMessage());
                     }
-
                 }
 
             }

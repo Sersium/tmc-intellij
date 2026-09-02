@@ -39,21 +39,31 @@ public class ProjectOpener {
 
     public void openProject(Project project, String path) {
         logger.info("Opening project from {}. @ProjectOpener", path);
-        if (Files.isDirectory(Paths.get(path))) {
-            if (project == null || !path.equals(project.getBasePath())) {
+        Path projectPath = Paths.get(path);
+        if (Files.isDirectory(projectPath)) {
+            if (project == null || project.getBasePath() == null || !projectPath.equals(Paths.get(project.getBasePath()))) {
                 try {
-                    if (project != null) {
-                        new ActivateSnapshotsListeners(project).removeListeners();
+                    if (project != null && !project.isDisposed()) {
+                        try {
+                            new ActivateSnapshotsListeners(project).removeListeners();
+                        } catch (Throwable t) {
+                            logger.warn("Could not remove snapshot listeners: {}", t.getMessage());
+                        }
                     }
                     ExerciseImport.importExercise(path);
-                    ProjectUtil.openOrImport(path, project, true);
-                    if (project != null) {
-                        ProjectManager.getInstance().closeAndDispose(project);
-                    }
+                    ProjectUtil.openOrImport(projectPath);
 
-                    String[] split = PathResolver.getCourseAndExerciseName(path);
-                    Course course = new ObjectFinder().findCourse(split[split.length - 2], "name");
-                    TmcSettingsManager.get().setCourse(Optional.fromNullable(course));
+                    try {
+                        String[] split = PathResolver.getCourseAndExerciseName(path);
+                        if (split != null && split.length >= 2) {
+                            Course course = new ObjectFinder().findCourse(split[split.length - 2], "name");
+                            if (course != null) {
+                                TmcSettingsManager.get().setCourse(Optional.of(course));
+                            }
+                        }
+                    } catch (Throwable t) {
+                        logger.warn("Could not update active course in settings: {}", t.getMessage());
+                    }
 
                 } catch (Exception exception) {
                     logger.warn(
