@@ -128,12 +128,12 @@ public class ExerciseDownloadingService {
                 ApplicationManager.getApplication()
                         .invokeLater(
                                 () -> {
-                                    if (0
-                                            == Messages.showYesNoDialog(
-                                                    "Would you like to open the first "
-                                                     + "of the downloaded exercises?",
+                                    int choice = Messages.showYesNoDialog(
+                                            (Project) null,
+                                            "Exercises have been downloaded successfully!\n\nWould you like to open the first exercise now?",
                                             "Download Complete",
-                                                    null)) {
+                                            Messages.getQuestionIcon());
+                                    if (choice == Messages.YES) {
                                         NextExerciseFetcher.openFirst(exerciseList);
                                     }
                                 });

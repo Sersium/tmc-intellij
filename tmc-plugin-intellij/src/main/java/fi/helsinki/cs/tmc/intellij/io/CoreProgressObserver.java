@@ -19,27 +19,49 @@ public class CoreProgressObserver extends ProgressObserver {
     @Override
     public void progress(long mysteryLong, String status) {
         logger.info("Setting progress status. @CoreProgressObserver");
-        progressWindow.setText2(status);
-        progressWindow.checkCanceled();
+        try {
+            if (progressWindow != null) {
+                progressWindow.setText2(status);
+                progressWindow.checkCanceled();
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     @Override
     public void progress(long mysteryLong, Double progress, String status) {
         logger.info("Setting progress status. @CoreProgressObserver");
-        progressWindow.setText2(status);
-        progressWindow.setFraction(progress);
-        progressWindow.checkCanceled();
+        try {
+            if (progressWindow != null) {
+                progressWindow.setText2(status);
+                if (progress != null) {
+                    progressWindow.setFraction(progress);
+                }
+                progressWindow.checkCanceled();
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     @Override
     public void start(long mysteryLong) {
         logger.info("Opening progress window. @CoreProgressObserver");
-        progressWindow.start();
+        try {
+            if (progressWindow != null) {
+                progressWindow.start();
+            }
+        } catch (Throwable ignored) {
+        }
     }
 
     @Override
     public void end(long mysteryLong) {
         logger.info("Closing progress window. @CoreProgressObserver");
-        progressWindow.dispose();
+        try {
+            if (progressWindow != null) {
+                progressWindow.dispose();
+            }
+        } catch (Throwable ignored) {
+        }
     }
 }
