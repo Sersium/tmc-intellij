@@ -18,15 +18,20 @@ public class DownloadListWindow {
 
     public void showDownloadableExercises(List<Exercise> exercises) {
         logger.info("Creating window to show downloadable exercises. @DownloadListWindow");
-        frame = new JFrame();
-        JPanel panel = new DownloadListPanel(exercises, this).getPanel();
-        frame.add(panel);
-        frame.setTitle("Available exercises");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-        frame.setResizable(true);
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
+            frame = new JFrame();
+            JPanel panel = new DownloadListPanel(exercises, this).getPanel();
+            frame.add(panel);
+            frame.setTitle("Available exercises");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setAlwaysOnTop(true);
+            frame.setVisible(true);
+            frame.toFront();
+            frame.requestFocus();
+            frame.setResizable(true);
+        });
     }
 
     public void close() {

@@ -101,6 +101,14 @@ public class CustomCheckBoxList extends JList<JCheckBox> implements Iterable<JCh
         };
     }
 
+    public void setCheckboxes(List<JCheckBox> boxes) {
+        for (JCheckBox box : boxes) {
+            box.addItemListener(itemEventForwarder);
+            box.addPropertyChangeListener(checkBoxPropChangeListener);
+        }
+        setListData(boxes.toArray(new JCheckBox[0]));
+    }
+
     public void addCheckbox(JCheckBox newCheckBox) {
         newCheckBox.addItemListener(itemEventForwarder);
         newCheckBox.addPropertyChangeListener(checkBoxPropChangeListener);

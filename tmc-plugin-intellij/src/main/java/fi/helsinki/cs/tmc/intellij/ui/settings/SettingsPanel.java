@@ -159,6 +159,8 @@ public class SettingsPanel {
 
             saveInformation();
 
+            new ErrorMessageService().showInfoBalloon("Checking for downloadable exercises...");
+
             Project project = new ObjectFinder().findCurrentProject();
             DownloadExerciseAction action = new DownloadExerciseAction();
             action.downloadExercises(project, false);
@@ -219,23 +221,10 @@ public class SettingsPanel {
             this.frame.setVisible(false);
             this.instance = null;
 
-            SettingsTmc settingsTmc =
-                    PersistentTmcSettings.getInstance().getSettingsTmc();
-
-            if (settingsTmc.getOrganization().orNull() != organizationFirst) {
-                ApplicationManager.getApplication()
-                        .invokeLater(
-                                () -> {
-//                                    new ErrorMessageService()
-//                                            .showInfoBalloon(
-//                                                    "Organization has been changed. Refreshing project list...");
-
-                                    ProjectListManagerHolder.get().refreshAllCourses();
-
-//                                    new ErrorMessageService()
-//                                            .showInfoBalloon("Project list has been refreshed.");
-                                });
-            }
+            ApplicationManager.getApplication().invokeLater(() -> {
+                ProjectListManagerHolder.get().refreshAllCourses();
+                new ErrorMessageService().showInfoBalloon("TMC settings saved successfully.");
+            });
         };
     }
 

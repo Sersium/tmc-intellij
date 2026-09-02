@@ -64,7 +64,7 @@ public class ProjectListWindow {
         final ProjectOpener opener = new ProjectOpener();
         CourseTabFactory factory = new CourseTabFactory();
 
-        if (courses != null) {
+        if (courses != null && !courses.isEmpty()) {
             createCourseSpecificTabs(finder, opener, tabbedPaneBase,
                 courses, factory, new CourseAndExerciseManager());
 
@@ -72,6 +72,29 @@ public class ProjectListWindow {
             // TODO: refresh button not working
             // toolbar.add(refreshButton);
             setActiveTabToSelectedCourse();
+        } else {
+            JPanel emptyPanel = new JPanel();
+            emptyPanel.setLayout(new javax.swing.BoxLayout(emptyPanel, javax.swing.BoxLayout.Y_AXIS));
+            emptyPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            javax.swing.JLabel messageLabel = new javax.swing.JLabel("<html><b>No exercises downloaded yet.</b><br><br>"
+                    + "To download exercises:<br>"
+                    + "1. Select <b>TMC &rarr; Settings</b> to choose your course.<br>"
+                    + "2. Click <b>Download course exercises</b> or use <b>TMC &rarr; Download current course's exercises</b>.</html>");
+            messageLabel.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+            JButton downloadBtn = new JButton("Download course exercises");
+            downloadBtn.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+            downloadBtn.addActionListener(e -> {
+                com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
+                new fi.helsinki.cs.tmc.intellij.actions.buttonactions.DownloadExerciseAction().downloadExercises(project, false);
+            });
+
+            emptyPanel.add(messageLabel);
+            emptyPanel.add(javax.swing.Box.createRigidArea(new Dimension(0, 15)));
+            emptyPanel.add(downloadBtn);
+
+            tabbedPaneBase.addTab("Exercises", emptyPanel);
         }
     }
 

@@ -40,11 +40,7 @@ public class OpenToolWindowAction extends AnAction implements ToolWindowFactory 
             logger.warn("project was null ending openToolWindow @OpenToolWindowAction");
             return;
         }
-        ToolWindow projectList = null;
-
-        if (ToolWindowManager.getInstance(project).getToolWindow("Project") != null) {
-            projectList = ToolWindowManager.getInstance(project).getToolWindow("TMC Project List");
-        }
+        ToolWindow projectList = ToolWindowManager.getInstance(project).getToolWindow("TMC Project List");
 
         if (projectList == null) {
             logger.warn("ToolWindow was null ending openToolWindow @OpenToolwindowAction");
@@ -54,8 +50,7 @@ public class OpenToolWindowAction extends AnAction implements ToolWindowFactory 
         if (projectList.isVisible()) {
             projectList.hide(null);
         } else {
-            ToolWindowManager.getInstance(project).getToolWindow("TMC Project List").show(null);
-            ToolWindowManager.getInstance(project);
+            projectList.show(null);
         }
     }
 

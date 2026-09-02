@@ -44,34 +44,51 @@ public class OrganizationCard extends JPanel {
         setLogo();
     }
 
+    private static final java.util.Map<String, ImageIcon> LOGO_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final ImageIcon DEFAULT_PLACEHOLDER = createDefaultPlaceholder();
+
+    private static ImageIcon createDefaultPlaceholder() {
+        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(49, 49, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+        g2d.setColor(new Color(220, 220, 220));
+        g2d.fillRoundRect(0, 0, 49, 49, 8, 8);
+        g2d.dispose();
+        return new ImageIcon(img);
+    }
+
     private void setLogo() {
-        setLogo(logoUrl("placeholderLogo.png"));
         final String logoPath = organization.getLogoPath();
-        if (logoPath != null && !logoPath.contains("missing")) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                URL url = logoUrl(logoPath);
-                if (url == null) {
-                    return;
-                }
+        if (logoPath == null || logoPath.contains("missing") || logoPath.isBlank()) {
+            this.logo.setIcon(DEFAULT_PLACEHOLDER);
+            return;
+        }
+
+        ImageIcon cached = LOGO_CACHE.get(logoPath);
+        if (cached != null) {
+            this.logo.setIcon(cached);
+            return;
+        }
+
+        this.logo.setIcon(DEFAULT_PLACEHOLDER);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            URL url = logoUrl(logoPath);
+            if (url == null) {
+                return;
+            }
+            try {
                 ImageIcon downloadedImage = new ImageIcon(url);
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    setLogo(downloadedImage);
-                    this.parent.repaint();
-                });
-            });
-        }
-    }
-
-    private void setLogo(URL logoUrl) {
-        if (logoUrl != null) {
-            setLogo(new ImageIcon(logoUrl));
-        }
-    }
-
-    private void setLogo(ImageIcon image) {
-        this.image = image;
-        this.image.setImage(this.image.getImage().getScaledInstance(49, 49, Image.SCALE_SMOOTH));
-        this.logo.setIcon(this.image);
+                if (downloadedImage.getIconWidth() > 0 && downloadedImage.getIconHeight() > 0) {
+                    Image scaled = downloadedImage.getImage().getScaledInstance(49, 49, Image.SCALE_SMOOTH);
+                    ImageIcon scaledIcon = new ImageIcon(scaled);
+                    LOGO_CACHE.put(logoPath, scaledIcon);
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        this.logo.setIcon(scaledIcon);
+                        this.parent.repaint();
+                    });
+                }
+            } catch (Exception ignored) {
+            }
+        });
     }
 
     public Organization getOrganization() {

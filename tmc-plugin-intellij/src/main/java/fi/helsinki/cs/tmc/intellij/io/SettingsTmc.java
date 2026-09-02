@@ -34,11 +34,11 @@ public class SettingsTmc implements TmcSettings, Serializable {
     @Property private Organization organization;
     @Property private String token;
     @Property private OauthCredentials oauthCredentials;
-    private String serverAddress;
-    private String projectBasePath;
-    private boolean checkForExercises;
-    private boolean sendDiagnostics;
-    private boolean firstRun;
+    @Property private String serverAddress;
+    @Property private String projectBasePath;
+    @Property private boolean checkForExercises;
+    @Property private boolean sendDiagnostics;
+    @Property private boolean firstRun;
 
     public SettingsTmc(String serverAddress, String username, String password) {
         this.sendDiagnostics = true;
@@ -95,12 +95,22 @@ public class SettingsTmc implements TmcSettings, Serializable {
 
     public String getProjectBasePath() {
         logger.info("Getting project base path <- {}. @SettingsTmc", projectBasePath);
+        if (projectBasePath == null || projectBasePath.trim().isEmpty()) {
+            projectBasePath =
+                    FileSystemView.getFileSystemView().getDefaultDirectory().toString()
+                            + File.separator
+                            + "IdeaProjects"
+                            + File.separator
+                            + "TMCProjects";
+        }
         return projectBasePath;
     }
 
     public void setProjectBasePath(String projectBasePath) {
         logger.info("Setting project base path -> {}. @SettingsTmc", projectBasePath);
-        if (projectBasePath.contains("TMCProjects")) {
+        if (projectBasePath == null || projectBasePath.trim().isEmpty()) {
+            this.projectBasePath = getProjectBasePath();
+        } else if (projectBasePath.contains("TMCProjects")) {
             this.projectBasePath = projectBasePath;
         } else {
             this.projectBasePath = projectBasePath + File.separator + "TMCProjects";
@@ -110,6 +120,9 @@ public class SettingsTmc implements TmcSettings, Serializable {
     @Override
     public String getServerAddress() {
         logger.info("Getting server address <- {}. @SettingsTmc", serverAddress);
+        if (serverAddress == null || serverAddress.trim().isEmpty()) {
+            serverAddress = "https://tmc.mooc.fi/";
+        }
         return serverAddress;
     }
 

@@ -76,15 +76,26 @@ public class ExerciseDownloadingService {
             try {
                 logger.info("Starting to check exercises. @ExerciseDownloadingService");
 
+                final Course currentCourse = settings.getCurrentCourse().orNull();
+                if (currentCourse == null) {
+                    new ErrorMessageService().showErrorMessagePopup("You need to select a course first in TMC Settings.");
+                    return;
+                }
+
                 final Course course =
-                        finder.findCourse(settings.getCurrentCourse().get().getName(), "name");
+                        finder.findCourse(currentCourse.getName(), "name");
+                if (course == null) {
+                    new ErrorMessageService().showErrorMessagePopup("Could not fetch course details from TMC server for " + currentCourse.getName());
+                    return;
+                }
 
                 List<Exercise> exercises = course.getExercises();
+                exercises = exercises == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(exercises);
                 exercises = checker.clean(exercises, settings);
                 if (!downloadAll) {
                     exercises = notCompletedExercises(exercises);
                 }
-                if (exercises == null || exercises.size() == 0) {
+                if (exercises.isEmpty()) {
                     new ErrorMessageService().showExercisesAreUpToDate(course);
                     return;
                 }
@@ -180,29 +191,17 @@ public class ExerciseDownloadingService {
     }
 
     private static void createThreadForRefreshingExerciseList() {
-        logger.info("Creating new thread for refreshing exerciseList");
-        ApplicationManager.getApplication()
-                .invokeLater(
-                        () -> ApplicationManager.getApplication()
-                                .runWriteAction(
-                                        () -> {
-                                            logger.info(
-                                                    "Updating project list. "
-                                                    + "@ExerciseDownloadingService");
-                                            refreshExerciseList();
-                                        }));
-    }
-
-    private static void refreshExerciseList() {
-        ApplicationManager.getApplication()
-                .executeOnPooledThread(
-                        () -> {
-                            new CourseAndExerciseManager().initiateDatabase();
-                            ApplicationManager.getApplication()
-                                    .invokeLater(
-                                            () -> ProjectListManagerHolder.get()
-                                                    .refreshAllCourses());
-                        });
+        logger.info("Refreshing exercise list. @ExerciseDownloadingService");
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            new CourseAndExerciseManager().initiateDatabase();
+            ApplicationManager.getApplication().invokeLater(() -> {
+                ProjectListManagerHolder.get().refreshAllCourses();
+                Project currentProject = new ObjectFinder().findCurrentProject();
+                if (currentProject != null) {
+                    new fi.helsinki.cs.tmc.intellij.actions.OpenToolWindowAction().openToolWindow(currentProject);
+                }
+            });
+        });
     }
 
     private static List<Exercise> notCompletedExercises(List<Exercise> exercises) {
