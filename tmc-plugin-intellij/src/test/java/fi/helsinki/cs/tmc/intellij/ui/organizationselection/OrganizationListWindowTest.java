@@ -20,7 +20,7 @@ public class OrganizationListWindowTest {
     @Before
     public void setUp() {
         createOrganizationListWindow();
-        settingsPanel = new SettingsPanelMock(new JFrame());
+        settingsPanel = new SettingsPanelMock();
     }
 
     public void createOrganizationListWindow() {
@@ -57,7 +57,7 @@ public class OrganizationListWindowTest {
         orgListWin.getOrganizations().setSelectedIndex(1);
         orgListWin.getButton().doClick();
 
-        settingsPanel.getOrganizationLabel().getText().contains("Kissa");
+        assertTrue(settingsPanel.getOrganizationLabel().getText().contains("Kissa"));
     }
 
     @Test

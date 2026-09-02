@@ -75,4 +75,7 @@ tasks {
         options.encoding = "UTF-8"
         options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
     }
+    test {
+        systemProperty("java.awt.headless", "true")
+    }
 }

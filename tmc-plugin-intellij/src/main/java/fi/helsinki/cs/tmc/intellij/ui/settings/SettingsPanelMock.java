@@ -37,6 +37,10 @@ public class SettingsPanelMock {
     private static SettingsPanelMock instance;
     private JFrame frame;
 
+    public SettingsPanelMock() {
+        this(null);
+    }
+
     public SettingsPanelMock(final JFrame frame) {
         this.frame = frame;
         this.instance = this;
@@ -209,16 +213,20 @@ public class SettingsPanelMock {
             new ButtonInputListener().receiveSettings();
             //            saveInformation();
 
-            this.frame.dispose();
-            this.frame.setVisible(false);
+            if (this.frame != null) {
+                this.frame.dispose();
+                this.frame.setVisible(false);
+            }
             this.instance = null;
         };
     }
 
     private ActionListener createActionListenerCancel() {
         return actionEvent -> {
-            this.frame.dispose();
-            this.frame.setVisible(false);
+            if (this.frame != null) {
+                this.frame.dispose();
+                this.frame.setVisible(false);
+            }
             this.instance = null;
         };
     }
