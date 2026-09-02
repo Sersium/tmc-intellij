@@ -20,10 +20,9 @@ import java.util.List;
 public class TestResultPanelFactory implements ToolWindowFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(TestResultPanelFactory.class);
-    private static List<TestResultsPanel> panels;
+    private static final List<TestResultsPanel> panels = new ArrayList<>();
 
     public TestResultPanelFactory() {
-        panels = new ArrayList<>();
     }
 
     @Override

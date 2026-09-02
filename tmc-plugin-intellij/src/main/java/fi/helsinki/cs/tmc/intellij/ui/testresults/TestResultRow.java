@@ -46,7 +46,7 @@ public class TestResultRow extends JPanel {
         if (message != null) {
             createContents(message);
         }
-        if (details != null) {
+        if (details != null && !details.trim().isEmpty()) {
             createDetails(details);
         }
     }
@@ -152,12 +152,29 @@ public class TestResultRow extends JPanel {
     private void showDetailsPopup(String content) {
         logger.info("Showing details popup. @TestResultRow");
         JTextPane pane = new JTextPane();
-        pane.setText(content);
+        pane.setText(content != null ? content : "");
         pane.setEditable(false);
-        JBPopupFactory.getInstance()
-                .createComponentPopupBuilder(pane, new JLabel("Message"))
-                .createPopup()
-                .showCenteredInCurrentWindow(
-                        new ObjectFinder().findCurrentProject());
+        pane.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        com.intellij.ui.components.JBScrollPane scrollPane =
+                new com.intellij.ui.components.JBScrollPane(pane);
+        scrollPane.setPreferredSize(new java.awt.Dimension(550, 320));
+
+        com.intellij.openapi.project.Project project = new ObjectFinder().findCurrentProject();
+        com.intellij.openapi.ui.popup.JBPopup popup =
+                JBPopupFactory.getInstance()
+                        .createComponentPopupBuilder(scrollPane, new JLabel(" Test Details"))
+                        .setTitle("Test Details")
+                        .setRequestFocus(true)
+                        .setFocusable(true)
+                        .setResizable(true)
+                        .setMovable(true)
+                        .createPopup();
+
+        if (project != null) {
+            popup.showCenteredInCurrentWindow(project);
+        } else {
+            popup.showInFocusCenter();
+        }
     }
 }

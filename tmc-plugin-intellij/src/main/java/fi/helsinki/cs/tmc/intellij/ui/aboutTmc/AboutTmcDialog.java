@@ -44,8 +44,7 @@ public class AboutTmcDialog extends JDialog {
         this.infoTextPane.addHyperlinkListener((HyperlinkEvent e) -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                 try {
-                    Desktop desktop = Desktop.getDesktop();
-                    desktop.browse(new URI("https://mooc.fi/tmc"));
+                    com.intellij.ide.BrowserUtil.browse("https://mooc.fi/tmc");
                 } catch (Exception ex) {
                     new ErrorMessageService().showErrorMessagePopup("Failed to open browser.\n" + ex.getMessage());
                 }

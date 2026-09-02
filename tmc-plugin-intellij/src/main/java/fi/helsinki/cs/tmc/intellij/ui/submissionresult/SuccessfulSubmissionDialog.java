@@ -238,26 +238,14 @@ public class SuccessfulSubmissionDialog extends JDialog {
         return new AbstractAction(message) {
             @Override
             public void actionPerformed(ActionEvent ev) {
-                Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-
-                if (desktop == null || !desktop.isSupported(Desktop.Action.BROWSE)) {
-                    String errorMessage = "Your OS doesn't support java.awt.Desktop.browser";
-                    Messages.showErrorDialog(project, errorMessage, "Os Problem");
-                    return;
-                }
-
                 try {
-                    desktop.browse(new URI(solutionUrl));
+                    com.intellij.ide.BrowserUtil.browse(solutionUrl);
                 } catch (Exception ex) {
-                    logger.warn(
-                            "Failed to open browser. "
-                                    + "Problem with browser. @SuccessfulSubmissionDialog",
-                            ex);
+                    logger.warn("Failed to open browser. @SuccessfulSubmissionDialog", ex);
                     new ErrorMessageService()
                             .showErrorMessageWithExceptionDetails(
-                                    ex, "Failed to open browser. Problem with browser.", true);
-                    String errorMessage = "Failed to open browser.\n" + ex.getMessage();
-                    Messages.showErrorDialog(project, errorMessage, "Problem with Browser");
+                                    ex, "Failed to open browser.", true);
+                    Messages.showErrorDialog(project, "Failed to open browser:\n" + ex.getMessage(), "Problem with Browser");
                 }
             }
         };

@@ -36,8 +36,8 @@ public class ResultPanel {
         viewPasteButton.addActionListener(
                 event -> {
                     try {
-                        Desktop.getDesktop().browse(uri);
-                    } catch (IOException e1) {
+                        com.intellij.ide.BrowserUtil.browse(uri);
+                    } catch (Exception e1) {
                         logger.warn("Could not open browser to view paste.", e1);
                     }
                 });

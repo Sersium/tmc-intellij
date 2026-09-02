@@ -51,6 +51,7 @@ dependencies {
     implementation("org.apache.ant:ant:1.10.14")
     implementation("org.apache.maven.shared:maven-invoker:3.2.0")
     implementation("org.apache.maven.shared:maven-shared-utils:3.4.2")
+    implementation("org.rauschig:jarchivelib:1.2.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.23.0")

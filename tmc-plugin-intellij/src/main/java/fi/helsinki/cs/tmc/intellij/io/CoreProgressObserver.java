@@ -35,6 +35,9 @@ public class CoreProgressObserver extends ProgressObserver {
             if (progressWindow != null) {
                 progressWindow.setText2(status);
                 if (progress != null) {
+                    if (progressWindow.isIndeterminate()) {
+                        progressWindow.setIndeterminate(false);
+                    }
                     progressWindow.setFraction(progress);
                 }
                 progressWindow.checkCanceled();

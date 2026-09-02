@@ -90,7 +90,7 @@ public class TestRunningService {
                         return;
                     }
 
-                    showTestResult(result);
+                    showTestResult(result, project);
                     checkIfAllTestsPassed(result, project);
                 },
                 project,
@@ -138,18 +138,28 @@ public class TestRunningService {
         if (project == null || project.isDisposed()) {
             return;
         }
-        var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results");
-        if (toolWindow != null) {
-            toolWindow.show(null);
-            toolWindow.activate(null);
-        }
+        ApplicationManager.getApplication().invokeLater(() -> {
+            var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results");
+            if (toolWindow != null) {
+                toolWindow.show(null);
+                toolWindow.activate(null);
+            }
+        });
     }
 
-    public void showTestResult(final RunResult finalResult) {
+    public void showTestResult(final RunResult finalResult, final Project project) {
         logger.info("Showing the final test result after updating. @TestRunningService");
         ApplicationManager.getApplication()
-                .invokeLater(
-                        (() -> TestResultPanelFactory.updateMostRecentResult(
-                                finalResult.testResults, null)));
+                .invokeLater(() -> {
+                    TestResultPanelFactory.updateMostRecentResult(
+                            finalResult.testResults, null);
+                    if (project != null && !project.isDisposed()) {
+                        var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results");
+                        if (toolWindow != null) {
+                            toolWindow.show(null);
+                            toolWindow.activate(null);
+                        }
+                    }
+                });
     }
 }

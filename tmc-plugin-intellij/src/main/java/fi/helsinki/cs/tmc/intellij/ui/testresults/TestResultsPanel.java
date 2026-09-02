@@ -129,10 +129,11 @@ public class TestResultsPanel extends JPanel {
 
     private String getDetails(TestResult result) {
         List<String> detailsRows = getDetailsOrMessageRows(result);
-        if (detailsRows == null) {
+        if (detailsRows == null || detailsRows.isEmpty()) {
             return null;
         }
-        return String.join("\n", detailsRows);
+        String joined = String.join("\n", detailsRows).trim();
+        return joined.isEmpty() ? null : joined;
     }
 
     private List<String> getDetailsOrMessageRows(TestResult res) {
