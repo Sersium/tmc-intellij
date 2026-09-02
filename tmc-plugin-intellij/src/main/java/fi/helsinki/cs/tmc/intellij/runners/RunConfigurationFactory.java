@@ -47,20 +47,26 @@ public class RunConfigurationFactory {
     public TreeClassChooser chooseMainClassForProject() {
         logger.info("Choosing main class for project.");
         TreeClassChooser chooser;
-        Project project = new ObjectFinder().findCurrentProject();
+        Project project = module != null ? module.getProject() : new ObjectFinder().findCurrentProject();
         while (true) {
             TreeClassChooserFactory factory = TreeClassChooserFactory.getInstance(project);
-            GlobalSearchScope scope;
-            scope = GlobalSearchScope.moduleScope(module);
-            PsiClass ecClass = JavaPsiFacade.getInstance(project).findClass("", scope);
+            GlobalSearchScope scope = GlobalSearchScope.moduleScope(module);
+            PsiClass ecClass = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
+                    (com.intellij.openapi.util.Computable<PsiClass>) () ->
+                            JavaPsiFacade.getInstance(project).findClass("", scope));
             ClassFilter filter = createClassFilter();
             chooser =
                     factory.createInheritanceClassChooser(
                             "Choose main class", scope, ecClass, null, filter);
             chooser.showDialog();
-            if (chooser.getSelected() == null
-                    || chooser.getSelected().findMethodsByName("main", true).length > 0) {
-                logger.info("Choosing main class aborted.");
+            final TreeClassChooser selectedChooser = chooser;
+            boolean hasMain = Boolean.TRUE.equals(
+                    com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
+                            (com.intellij.openapi.util.Computable<Boolean>) () ->
+                                    selectedChooser.getSelected() == null
+                                            || selectedChooser.getSelected().findMethodsByName("main", true).length > 0));
+            if (hasMain) {
+                logger.info("Main class chosen successfully.");
                 break;
             }
         }
@@ -71,7 +77,10 @@ public class RunConfigurationFactory {
     /** Filters classes shown to the user. */
     private ClassFilter createClassFilter() {
         logger.info("Creating classFilter.");
-        return psiClass -> psiClass.findMethodsByName("main", true).length > 0;
+        return psiClass -> Boolean.TRUE.equals(
+                com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
+                        (com.intellij.openapi.util.Computable<Boolean>) () ->
+                                psiClass.findMethodsByName("main", true).length > 0));
     }
 
     /**
@@ -133,13 +142,45 @@ public class RunConfigurationFactory {
      * @return Whether the class has a valid main class or not
      */
     private boolean checkForMainClass(ApplicationConfiguration appCon) {
-        if (appCon.getMainClass() == null) {
-            logger.info("No main class was found, prompting user to choose one.");
-            TreeClassChooser chooser = chooseMainClassForProject();
-            if (chooser.getSelected() == null) {
-                return false;
-            }
-            configApplicationConfiguration(chooser);
+        String mainClassName = appCon.getMainClassName();
+        if (mainClassName != null && !mainClassName.trim().isEmpty()) {
+            return true;
+        }
+
+        Boolean hasMainClass = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
+                (com.intellij.openapi.util.Computable<Boolean>) () -> {
+                    try {
+                        return appCon.getMainClass() != null;
+                    } catch (Throwable t) {
+                        return false;
+                    }
+                });
+
+        if (Boolean.TRUE.equals(hasMainClass)) {
+            return true;
+        }
+
+        logger.info("No main class was found, prompting user to choose one.");
+        final TreeClassChooser[] chooserHolder = new TreeClassChooser[1];
+        if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
+            chooserHolder[0] = chooseMainClassForProject();
+        } else {
+            com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() -> {
+                chooserHolder[0] = chooseMainClassForProject();
+            });
+        }
+
+        TreeClassChooser chooser = chooserHolder[0];
+        if (chooser == null || chooser.getSelected() == null) {
+            return false;
+        }
+
+        Runnable configure = () -> configApplicationConfiguration(chooser);
+        if (com.intellij.openapi.application.ApplicationManager.getApplication().isDispatchThread()) {
+            com.intellij.openapi.application.WriteIntentReadAction.run(configure);
+        } else {
+            com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait(() ->
+                    com.intellij.openapi.application.WriteIntentReadAction.run(configure));
         }
         return true;
     }

@@ -67,11 +67,12 @@ public class RunProjectAction extends AnAction {
         }
 
         com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
-            try {
-                com.intellij.util.SlowOperations.allowSlowOperations((com.intellij.util.ThrowableRunnable<Throwable>) () -> {
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
                     logger.info("Getting RunManager.");
                     RunManager runManager = RunManager.getInstance(project);
-                    Module module = getModule(project);
+                    Module module = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction(
+                            (com.intellij.openapi.util.Computable<Module>) () -> getModule(project));
                     if (module == null) {
                         logger.warn("No module found for running project.");
                         return;
@@ -79,12 +80,12 @@ public class RunProjectAction extends AnAction {
                     String configurationType = getConfigurationType();
                     logger.info("Creating RunProject object.");
                     new RunProject(runManager, module, configurationType);
-                });
-            } catch (Throwable t) {
-                logger.warn("Failed to run project", t);
-            } finally {
-                fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
-            }
+                } catch (Throwable t) {
+                    logger.warn("Failed to run project", t);
+                } finally {
+                    fi.helsinki.cs.tmc.intellij.services.TmcOperationState.finishOperation();
+                }
+            });
         });
     }
 

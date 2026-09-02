@@ -25,17 +25,19 @@ public class ProjectExecutor {
             logger.warn("No usable project found, can't execute the configuration.");
             return;
         }
-        logger.info("Starting to build execution environment.");
-        RunManager runManager = RunManager.getInstance(project);
-        Executor executor = DefaultRunExecutor.getRunExecutorInstance();
-        RunnerAndConfigurationSettings selectedConfiguration =
-                runManager.createConfiguration(appCon, appCon.getFactory());
-        try {
-            logger.info("Executing project.");
-            ExecutionEnvironmentBuilder.create(executor, selectedConfiguration)
-                    .buildAndExecute();
-        } catch (ExecutionException e1) {
-            ExecutionErrorDialog.show(e1, "Error", project);
-        }
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() -> {
+            logger.info("Starting to build execution environment.");
+            RunManager runManager = RunManager.getInstance(project);
+            Executor executor = DefaultRunExecutor.getRunExecutorInstance();
+            RunnerAndConfigurationSettings selectedConfiguration =
+                    runManager.createConfiguration(appCon, appCon.getFactory());
+            try {
+                logger.info("Executing project.");
+                ExecutionEnvironmentBuilder.create(executor, selectedConfiguration)
+                        .buildAndExecute();
+            } catch (ExecutionException e1) {
+                ExecutionErrorDialog.show(e1, "Error", project);
+            }
+        });
     }
 }
