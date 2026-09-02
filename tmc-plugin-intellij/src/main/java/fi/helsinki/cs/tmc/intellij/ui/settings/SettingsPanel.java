@@ -213,19 +213,58 @@ public class SettingsPanel {
     private ActionListener createActionListenerOk() {
         logger.info("Create action listener for SettingsPanel ok button. @SettingsPanel");
         return actionEvent -> {
-            new ButtonInputListener().receiveSettings();
-            logger.info("Ok button pressed. @SettingsPanel");
-            saveInformation();
+            try {
+                new ButtonInputListener().receiveSettings();
+                logger.info("Ok button pressed. @SettingsPanel");
+                saveInformation();
+            } catch (Throwable t) {
+                logger.warn("Error saving settings", t);
+            }
 
-            this.frame.dispose();
-            this.frame.setVisible(false);
-            this.instance = null;
+            try {
+                this.frame.dispose();
+                this.frame.setVisible(false);
+                this.instance = null;
+            } catch (Throwable ignored) {
+            }
 
             ApplicationManager.getApplication().invokeLater(() -> {
-                ProjectListManagerHolder.get().refreshAllCourses();
-                new ErrorMessageService().showInfoBalloon("TMC settings saved successfully.");
+                try {
+                    ProjectListManagerHolder.get().refreshAllCourses();
+                    new ErrorMessageService().showInfoBalloon("TMC settings saved successfully.");
+                } catch (Throwable ignored) {
+                }
+
+                Project currentProject = new ObjectFinder().findCurrentProject();
+                if (currentProject == null) {
+                    openFirstDownloadedExercise();
+                }
             });
         };
+    }
+
+    private void openFirstDownloadedExercise() {
+        try {
+            SettingsTmc settings = TmcSettingsManager.get();
+            if (settings.getCurrentCourse().isPresent()) {
+                String courseName = settings.getCurrentCourse().get().getName();
+                java.nio.file.Path courseDir = settings.getTmcProjectDirectory().resolve(courseName);
+                if (java.nio.file.Files.isDirectory(courseDir)) {
+                    try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.list(courseDir)) {
+                        java.util.Optional<java.nio.file.Path> firstExercise = stream
+                                .filter(java.nio.file.Files::isDirectory)
+                                .sorted()
+                                .findFirst();
+                        if (firstExercise.isPresent()) {
+                            logger.info("Auto-opening first exercise: {}", firstExercise.get());
+                            new fi.helsinki.cs.tmc.intellij.io.ProjectOpener().openProject(firstExercise.get().toString());
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            logger.warn("Could not auto-open first exercise", t);
+        }
     }
 
     private ActionListener createActionListenerCancel() {

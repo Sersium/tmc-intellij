@@ -122,26 +122,20 @@ public class ExerciseDownloadingService {
         logger.info("Creating a new thread. @ExerciseDownloadingService");
 
         return new Thread(() -> {
+            List<Exercise> exerciseList = null;
             try {
-                List<Exercise> exerciseList =
-                        core.downloadOrUpdateExercises(observer, exercises).call();
-                ApplicationManager.getApplication()
-                        .invokeLater(
-                                () -> {
-                                    int choice = Messages.showYesNoDialog(
-                                            (Project) null,
-                                            "Exercises have been downloaded successfully!\n\nWould you like to open the first exercise now?",
-                                            "Download Complete",
-                                            Messages.getQuestionIcon());
-                                    if (choice == Messages.YES) {
-                                        NextExerciseFetcher.openFirst(exerciseList);
-                                    }
-                                });
+                exerciseList = core.downloadOrUpdateExercises(observer, exercises).call();
             } catch (Exception exception) {
-                logger.info("Failed to download exercises. @ExerciseDownloadingService");
+                logger.info("Failed to download exercises. @ExerciseDownloadingService", exception);
                 new ErrorMessageService()
                         .showErrorMessageWithExceptionDetails(exception, "Failed to download exercises.", true);
             }
+
+            final List<Exercise> listToOpen = (exerciseList != null && !exerciseList.isEmpty()) ? exerciseList : exercises;
+            ApplicationManager.getApplication().invokeLater(() -> {
+                logger.info("Automatically opening first downloaded exercise. @ExerciseDownloadingService");
+                NextExerciseFetcher.openFirst(listToOpen);
+            });
 
             createThreadForRefreshingExerciseList();
         });

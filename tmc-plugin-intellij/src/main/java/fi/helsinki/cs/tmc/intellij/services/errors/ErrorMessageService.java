@@ -30,7 +30,11 @@ public class ErrorMessageService {
      * Notification group used by IntelliJ to group TMC notifications.
      */
     public static NotificationGroup notifications() {
-        return NotificationGroupManager.getInstance().getNotificationGroup("TMC Notifications");
+        try {
+            return NotificationGroupManager.getInstance().getNotificationGroup("TMC Notifications");
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     private static final Logger logger = LoggerFactory.getLogger(ErrorMessageService.class);
@@ -107,10 +111,23 @@ public class ErrorMessageService {
     }
 
     private void showBalloonNotification(String message, NotificationType type) {
-        Notification notification = notifications().createNotification(message, type);
-        Project currentProject = new ObjectFinder().findCurrentProject();
+        try {
+            NotificationGroup group = notifications();
+            if (group != null) {
+                Notification notification = group.createNotification(message, type);
+                Project currentProject = new ObjectFinder().findCurrentProject();
 
-        ApplicationManager.getApplication().invokeLater(() -> Notifications.Bus.notify(notification, currentProject));
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    try {
+                        notification.notify(currentProject);
+                    } catch (Throwable t) {
+                        logger.warn("Failed to notify balloon: {}", t.getMessage());
+                    }
+                });
+            }
+        } catch (Throwable t) {
+            logger.warn("Failed to show balloon notification: {}", t.getMessage());
+        }
     }
 
     private void showPopup(String message, NotificationType notificationType) {
