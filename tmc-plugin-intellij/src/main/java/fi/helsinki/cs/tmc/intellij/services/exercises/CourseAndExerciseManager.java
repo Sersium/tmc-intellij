@@ -112,11 +112,33 @@ public class CourseAndExerciseManager {
             List<Course> courses =
                     TmcCoreHolder.get().listCourses(ProgressObserver.NULL_OBSERVER).call();
 
-            for (Course course : courses) {
-                fetchCourseFromTmcCore(database, course);
-            }
+            if (courses != null) {
+                java.util.Set<String> downloadedDirs = new java.util.HashSet<>();
+                try {
+                    List<String> dirs = new ObjectFinder().getListOfDirectoriesInPath(
+                            TmcSettingsManager.get().getProjectBasePath());
+                    if (dirs != null) {
+                        downloadedDirs.addAll(dirs);
+                    }
+                } catch (Exception ignored) {
+                }
 
-            getDatabase().setCourses(database);
+                String currentCourseName = TmcSettingsManager.get().getCourseName();
+
+                for (Course course : courses) {
+                    boolean isDownloaded = downloadedDirs.contains(course.getName());
+                    boolean isCurrent = currentCourseName != null && currentCourseName.equals(course.getName());
+
+                    if (isDownloaded || isCurrent) {
+                        fetchCourseFromTmcCore(database, course);
+                    } else {
+                        database.put(course.getTitle(), new java.util.ArrayList<>());
+                        database.put(course.getName(), new java.util.ArrayList<>());
+                    }
+                }
+
+                getDatabase().setCourses(database);
+            }
         } catch (TmcCoreException exception) {
             logger.warn(
                     "Failed to fetch courses from TmcCore. @CourseAndExerciseManager",

@@ -49,22 +49,10 @@ public class CoreProgressObserver extends ProgressObserver {
     @Override
     public void start(long mysteryLong) {
         logger.info("Opening progress window. @CoreProgressObserver");
-        try {
-            if (progressWindow != null) {
-                progressWindow.start();
-            }
-        } catch (Throwable ignored) {
-        }
     }
 
     @Override
     public void end(long mysteryLong) {
         logger.info("Closing progress window. @CoreProgressObserver");
-        try {
-            if (progressWindow != null) {
-                progressWindow.dispose();
-            }
-        } catch (Throwable ignored) {
-        }
     }
 }

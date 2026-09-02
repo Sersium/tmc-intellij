@@ -134,11 +134,11 @@ public class TestRunningService {
 
     public void displayTestWindow(ObjectFinder finder) {
         logger.info("Displaying test window. @TestRunningService");
-        Project project = finder.findCurrentProject();
-        if (project == null || project.isDisposed()) {
-            return;
-        }
         ApplicationManager.getApplication().invokeLater(() -> {
+            Project project = finder != null ? finder.findCurrentProject() : null;
+            if (project == null || project.isDisposed()) {
+                return;
+            }
             var toolWindow = ToolWindowManager.getInstance(project).getToolWindow("TMC Test Results");
             if (toolWindow != null) {
                 toolWindow.show(null);

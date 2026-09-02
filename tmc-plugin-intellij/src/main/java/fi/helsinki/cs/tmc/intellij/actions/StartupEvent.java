@@ -65,34 +65,33 @@ public class StartupEvent implements ProjectActivity {
 
         CoreProgressObserver observer = new CoreProgressObserver(progressWindow);
         threadingService.runWithNotification(
-                new Thread(
-                        () -> {
-                            setupLoggers(observer);
-                            setupTmcSettings(observer);
-                            CheckForOneDrive.run();
-                            setupCoreHolder(observer);
-                            setupSnapshots(observer, project);
-                            setupDatabase(observer);
-                            if (TmcSettingsManager.get().getFirstRun()) {
-                                TmcSettingsManager.get().setFirstRun(false);
-                            } else {
-                                sendDiagnostics(observer);
-                            }
+                () -> {
+                    setupLoggers(observer);
+                    setupTmcSettings(observer);
+                    CheckForOneDrive.run();
+                    setupCoreHolder(observer);
+                    setupSnapshots(observer, project);
+                    setupDatabase(observer);
+                    if (TmcSettingsManager.get().getFirstRun()) {
+                        TmcSettingsManager.get().setFirstRun(false);
+                    } else {
+                        sendDiagnostics(observer);
+                    }
 
-                            checkForNewExercises(observer, project);
+                    checkForNewExercises(observer, project);
 
-                            ApplicationManager.getApplication().invokeLater(() -> {
-                                if (project.isDisposed()) {
-                                    return;
-                                }
-                                if (ToolWindowManager.getInstance(project)
-                                                .getToolWindow("Project") != null) {
-                                    ToolWindowManager.getInstance(project)
-                                            .getToolWindow("Project").activate(null);
-                                }
-                                showLoginWindow();
-                            });
-                        }),
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        if (project.isDisposed()) {
+                            return;
+                        }
+                        if (ToolWindowManager.getInstance(project)
+                                        .getToolWindow("Project") != null) {
+                            ToolWindowManager.getInstance(project)
+                                    .getToolWindow("Project").activate(null);
+                        }
+                        showLoginWindow();
+                    });
+                },
                 project,
                 progressWindow);
     }
@@ -134,11 +133,13 @@ public class StartupEvent implements ProjectActivity {
 
     private void sendDiagnostics(ProgressObserver observer) {
         if (TmcSettingsManager.get().getSendDiagnostics()) {
-            try {
-                TmcCoreHolder.get().sendDiagnostics(observer).call();
-            } catch (Exception e) {
-                logger.debug("Failed to send diagnostics.", e);
-            }
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    TmcCoreHolder.get().sendDiagnostics(ProgressObserver.NULL_OBSERVER).call();
+                } catch (Exception e) {
+                    logger.debug("Failed to send diagnostics.", e);
+                }
+            });
         }
     }
 

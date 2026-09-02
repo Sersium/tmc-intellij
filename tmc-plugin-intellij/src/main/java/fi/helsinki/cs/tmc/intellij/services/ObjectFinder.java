@@ -206,7 +206,7 @@ public class ObjectFinder {
                         + course.getName());
     }
 
-    private List<String> getListOfDirectoriesInPath(String folderPath) {
+    public List<String> getListOfDirectoriesInPath(String folderPath) {
         logger.info("Processing getListOfDirectoriesInPath. @ObjectFinder");
         List<String> fileNames = new ArrayList<>();
 
